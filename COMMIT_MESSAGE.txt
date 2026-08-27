@@ -1,0 +1,111 @@
+feat: administration des comptes, deux niveaux, et restructuration du front
+
+Ajoute la gestion des comptes utilisateurs demandee : un proprietaire cree
+les comptes et pose les mots de passe, chaque membre change le sien. Le
+front est reorganise en pages separees avec un socle commun, sur le modele
+de Santiago-performances.
+
+--------------------------------------------------------------------------
+NIVEAUX D'ACCES
+--------------------------------------------------------------------------
+Deux seulement, membre et proprietaire.
+
+  Membre        annuaire, attribution, notes, et son propre mot de passe.
+  Proprietaire  tout cela, plus la creation de comptes, la reinitialisation
+                des mots de passe, le renommage, l'activation et la
+                suppression.
+
+Bruno Bartoli est proprietaire. Les quatre autres comptes existants sont
+membres.
+
+--------------------------------------------------------------------------
+POURQUOI UNE EDGE FUNCTION
+--------------------------------------------------------------------------
+Creer un compte ou reinitialiser un mot de passe exige la cle service_role.
+Cette cle ne peut pas vivre dans un site statique servi par GitHub Pages :
+elle y serait lisible par n'importe qui et donnerait un acces total a la
+base, RLS comprises.
+
+L'Edge Function `admin-users` est donc le seul detenteur de cette cle. Elle
+autorise en quatre etapes, dans cet ordre : jeton present, signature
+validee par Supabase, fiche `team` lue AVEC LES DROITS DE L'APPELANT, et
+enfin proprietaire actif. Lire le profil avec les droits de l'appelant plutot
+qu'avec la cle privilegiee est deliberé : une regle RLS mal ecrite ne peut
+pas elargir la vue de quelqu'un.
+
+Actions exposees : list, create, password, update, delete.
+
+--------------------------------------------------------------------------
+GARDE-FOUS
+--------------------------------------------------------------------------
+* Le dernier proprietaire actif ne peut etre ni supprime, ni retrograde, ni
+  desactive. Verifie dans l'Edge Function ET par un declencheur en base :
+  une manipulation faite depuis le tableau de bord Supabase ne passe pas par
+  la fonction, la barriere serait donc contournable avec un seul controle.
+* On ne peut pas retirer ses propres droits ni supprimer son propre compte.
+* Creation restreinte au domaine @fluxym.com.
+* Declencheur handle_new_user : tout compte cree cote auth obtient sa fiche
+  `team`, y compris s'il est cree depuis le tableau de bord. Sans lui, un
+  tel compte pourrait se connecter sans rien voir et l'erreur serait
+  incomprehensible.
+* email_confirm pose a la creation et a chaque reinitialisation : sinon le
+  compte existe mais refuse la connexion, et l'echec ressemble a un mot de
+  passe errone.
+* Changement de mot de passe personnel : l'ancien est exige et verifie en le
+  rejouant, pour qu'un poste laisse deverrouille ne serve pas a enfermer son
+  proprietaire dehors.
+* Suppression : le nom exact doit etre retape, et le nombre de contacts qui
+  seront liberes est annonce avant. La desactivation est proposee comme
+  alternative conservant le portefeuille.
+
+--------------------------------------------------------------------------
+MOTS DE PASSE
+--------------------------------------------------------------------------
+Generateur lisible : trois groupes de quatre signes separes par des tirets,
+alphabet de 31 caracteres sans les signes qu'on confond (0/O, 1/l/I), soit
+environ 59 bits. Un mot de passe est fait pour etre dicte ou colle une fois,
+puis remplace par son porteur : lisible avant d'etre long.
+
+Les identifiants ne sont affiches qu'une seule fois apres creation ou
+reinitialisation, avec un bouton qui copie un message pret a transmettre.
+Rien n'est stocke en clair, rien ne peut etre relu ensuite.
+
+--------------------------------------------------------------------------
+RESTRUCTURATION DU FRONT
+--------------------------------------------------------------------------
+Passage d'un fichier unique a des pages separees partageant un socle, pour
+s'aligner sur les conventions de Santiago-performances.
+
+  login.html   / js/login.js
+  index.html   / js/app.js      annuaire, attribution, suivi
+  compte.html  / js/compte.js   profil et mot de passe
+  admin.html   / js/admin.js    gestion des comptes
+  js/config.js                  URL et cle anon
+  js/api.js                     client, garde d'authentification, appels admin
+  js/nav.js                     navigation partagee
+  css/app.css
+
+La garde requireSession() precede le rendu de chaque page protegee. Un
+compte authentifie mais absent de `team` ou desactive est deconnecte
+immediatement, plutot que laisse devant une page vide. Un voile masque
+l'interface tant que la garde n'a pas tranche.
+
+Le lien Administration n'est rendu que pour un proprietaire : afficher un
+lien qui menerait a un refus est une mauvaise maniere. Ce n'est pas une
+protection, la vraie barriere est cote serveur.
+
+--------------------------------------------------------------------------
+BASE DE DONNEES
+--------------------------------------------------------------------------
+`team` devient le referentiel des comptes : ajout de user_id (lien vers
+auth.users), is_owner et created_at. Les cinq comptes existants sont
+rattaches. is_fluxym() s'appuie desormais sur user_id et non sur l'email du
+jeton. Ajout de is_owner(), de la vue `me`, et des declencheurs
+handle_new_user et protect_last_owner.
+
+`attendees.owner` reference `team.name` en on update cascade : renommer un
+membre fait suivre tous ses contacts, sans reprise manuelle.
+
+Migrations versionnees dans supabase/migrations, fonction dans
+supabase/functions. Le dossier est verse pour reference : schema et fonction
+sont deja deployes, le pousser ne redeploie rien.

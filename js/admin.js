@@ -28,7 +28,7 @@
               ${u.user_id === me.user_id ? '<i class="tag self">vous</i>' : ""}
               ${u.orphan ? '<i class="tag warn">sans compte</i>' : ""}
               ${!u.active ? '<i class="tag off">désactivé</i>' : ""}
-              <div class="u-sub">${FX.esc(u.email || "—")}${u.role ? " · " + FX.esc(u.role) : ""}</div>
+              <div class="u-sub"><b class="handle">${FX.esc(FX.toHandle(u.email))}</b><span class="dom">@${FX.esc(FX.CFG.LOGIN_DOMAIN)}</span>${u.role ? " · " + FX.esc(u.role) : ""}</div>
             </div>
           </div>
         </td>
@@ -51,7 +51,7 @@
     try {
       const r = await FX.admin("create", {
         name:     FX.$("#n-name").value.trim(),
-        email:    FX.$("#n-email").value.trim(),
+        email:    FX.toEmail(FX.$("#n-email").value),
         role:     FX.$("#n-role").value.trim(),
         color:    FX.$("#n-color").value,
         password: FX.$("#n-pass").value.trim() || null,
@@ -74,14 +74,15 @@
       <p>${generated ? "Mot de passe généré automatiquement." : "Mot de passe défini manuellement."}
          Il n'est affiché <b>qu'une seule fois</b> : transmettez-le maintenant.</p>
       <div class="rev-grid">
-        <div><span>Identifiant</span><code>${FX.esc(email)}</code></div>
+        <div><span>Identifiant</span><code class="big">${FX.esc(FX.toHandle(email))}</code>
+             <em>à saisir sans <code>@${FX.esc(FX.CFG.LOGIN_DOMAIN)}</code></em></div>
         <div><span>Mot de passe</span><code class="big">${FX.esc(password)}</code></div>
       </div>
       <button class="mini" id="rev-copy">Copier les deux</button>
       <button class="mini" id="rev-close">J'ai transmis, masquer</button>`;
     FX.$("#rev-copy").onclick = () => {
       navigator.clipboard.writeText(
-        `Application stand Esker All Access 2026\n${location.origin}${location.pathname.replace(/admin\.html$/, "")}\n\nIdentifiant : ${email}\nMot de passe : ${password}\n\nÀ changer depuis « Mon compte » après la première connexion.`
+        `Application stand Esker All Access 2026\n${location.origin}${location.pathname.replace(/admin\.html$/, "")}\n\nIdentifiant : ${FX.toHandle(email)}   (sans @${FX.CFG.LOGIN_DOMAIN})\nMot de passe : ${password}\n\nÀ changer depuis « Mon compte » après la première connexion.`
       ).then(() => FX.toast("Identifiants copiés", "ok"));
     };
     FX.$("#rev-close").onclick = () => { box.hidden = true; box.innerHTML = ""; };

@@ -83,6 +83,22 @@ forgerait un appel direct reçoit un `403`.
 
 ---
 
+## Identifiants courts, et pourquoi
+
+On se connecte avec `bbartoli`, pas avec `bbartoli@fluxym.com`. Le domaine
+est recollé côté client, dans `FX.toEmail()`, avant l'appel à Supabase.
+
+Ce n'est pas une coquetterie. Chrome indexe ses mots de passe par couple
+**origine + identifiant**, et toutes nos applications GitHub Pages
+partagent la même origine `fluxym-bba.github.io`. Deux applications qui
+utiliseraient la même adresse e-mail comme identifiant se retrouveraient
+donc à se disputer une seule et même entrée dans le gestionnaire, avec des
+mots de passe différents. Un identifiant court ici, une adresse complète
+ailleurs, et le gestionnaire tient enfin deux fiches distinctes.
+
+Une adresse complète tapée par habitude reste acceptée : `toEmail()` ne
+recolle le domaine que s'il manque.
+
 ## Cycle de vie d'un compte
 
 1. Le propriétaire remplit *Créer un compte* dans **Administration**.

@@ -4,7 +4,8 @@
 
   const rows = [
     ["Nom affiché",   me.name],
-    ["Adresse e-mail", me.email || me.auth_email],
+    ["Identifiant de connexion", FX.toHandle(me.email || me.auth_email)],
+    ["Adresse complète", me.email || me.auth_email],
     ["Fonction",       me.role || "—"],
     ["Niveau d'accès", me.is_owner ? "Propriétaire (peut gérer les comptes)" : "Membre"],
     ["Compte actif",   me.active ? "Oui" : "Non"],

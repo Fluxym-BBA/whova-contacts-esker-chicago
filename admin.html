@@ -39,9 +39,14 @@
         <input id="n-name" required placeholder="Lucas Dupont">
         <small>C'est ce nom qui apparaîtra sur les contacts qu'il prend en charge.</small>
       </label>
-      <label>Adresse e-mail <span class="req">obligatoire</span>
-        <input id="n-email" type="email" required placeholder="ldupont@fluxym.com">
-        <small>Domaine <code>@fluxym.com</code> exigé. Sert uniquement d'identifiant.</small>
+      <label>Identifiant <span class="req">obligatoire</span>
+        <div class="suffixed">
+          <input id="n-email" required placeholder="ldupont" spellcheck="false"
+                 autocapitalize="off" autocorrect="off">
+          <span>@fluxym.com</span>
+        </div>
+        <small>Saisissez seulement le début. Le domaine est ajouté automatiquement.
+               C'est un identifiant, aucun e-mail n'est envoyé.</small>
       </label>
       <label>Fonction
         <input id="n-role" placeholder="Consultant avant-vente">

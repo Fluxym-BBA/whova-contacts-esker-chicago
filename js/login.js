@@ -12,14 +12,14 @@
     btn.disabled = true; btn.textContent = "Connexion…"; FX.$("#err").textContent = "";
 
     const { error } = await FX.sb.auth.signInWithPassword({
-      email: FX.$("#email").value.trim().toLowerCase(),
+      email: FX.toEmail(FX.$("#email").value),
       password: FX.$("#password").value
     });
 
     if (error) {
       btn.disabled = false; btn.textContent = "Se connecter";
       FX.$("#err").textContent = /invalid/i.test(error.message)
-        ? "E-mail ou mot de passe incorrect."
+        ? "Identifiant ou mot de passe incorrect."
         : "Connexion impossible : " + error.message;
       return;
     }

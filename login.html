@@ -13,11 +13,17 @@
   <div class="brand">FLUXYM</div>
   <h1>Stand Esker All&nbsp;Access 2026</h1>
   <p class="sub">Rosemont, IL · 8-10 septembre 2026</p>
-  <label>Adresse e-mail
-    <input type="email" id="email" autocomplete="username" required placeholder="prenom.nom@fluxym.com">
+  <label>Identifiant
+    <div class="suffixed">
+      <input type="text" id="email" name="username" autocomplete="username" required
+             placeholder="bbartoli" spellcheck="false"
+             autocapitalize="off" autocorrect="off">
+      <span>@fluxym.com</span>
+    </div>
+    <small>Sans le domaine : uniquement le début de votre adresse.</small>
   </label>
   <label>Mot de passe
-    <input type="password" id="password" autocomplete="current-password" required>
+    <input type="password" id="password" name="password" autocomplete="current-password" required>
   </label>
   <button type="submit" id="login-btn">Se connecter</button>
   <div class="err" id="err"></div>

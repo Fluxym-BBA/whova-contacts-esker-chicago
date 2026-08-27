@@ -20,6 +20,15 @@ window.FX = (() => {
     clearTimeout(t._h); t._h = setTimeout(() => (t.hidden = true), ms);
   }
 
+  /* L'utilisateur saisit `bbartoli`, Supabase attend `bbartoli@fluxym.com`.
+     La conversion est faite ici, et nulle part ailleurs. Une adresse
+     complete tapee par habitude reste acceptee. */
+  const toEmail  = v => {
+    const s = String(v || "").trim().toLowerCase();
+    return !s ? "" : s.includes("@") ? s : `${s}@${CFG.LOGIN_DOMAIN}`;
+  };
+  const toHandle = v => String(v || "").trim().toLowerCase().split("@")[0];
+
   const initials = n => (n || "?").split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0]).join("").toUpperCase();
   const hue = str => { let h = 0; for (const c of String(str)) h = (h*31 + c.charCodeAt(0)) % 360; return `hsl(${h} 46% 48%)`; };
   const fmtDate = d => d ? new Date(d).toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" }) : "jamais";
@@ -72,7 +81,7 @@ window.FX = (() => {
 
   const logout = async () => { await sb.auth.signOut(); location.replace("login.html"); };
 
-  return { sb, CFG, $, $$, esc, toast, initials, hue, fmtDate,
+  return { sb, CFG, $, $$, esc, toast, initials, hue, fmtDate, toEmail, toHandle,
            requireSession, admin, logout,
            get me(){ return ME; }, get team(){ return TEAM; } };
 })();
