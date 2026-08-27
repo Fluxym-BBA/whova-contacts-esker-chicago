@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Méthode de priorisation | Stand Esker All Access 2026 — Fluxym</title>
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+<nav id="main-nav"></nav>
+
+<main class="wrap doc">
+  <h1>Comment la priorité est déterminée</h1>
+  <p class="lead">A, B ou C n'est pas un jugement sur les gens : c'est un ordre
+  de passage calculé automatiquement pour ne pas avoir à lire 418 fiches avant
+  d'ouvrir le stand. La formule dégrossit, vous décidez.</p>
+
+  <div class="kpis" id="prio-kpis"></div>
+
+  <h2>Ce que la formule sait, et ce qu'elle ignore</h2>
+  <p>Elle ne dispose que de <b>trois informations</b>, toutes issues de
+  l'inscription Whova : la <b>société</b>, les <b>tags Whova</b>
+  (exposant, sponsor, organisateur, speaker) et l'<b>intitulé de poste</b>
+  saisi librement par la personne.</p>
+  <p>Elle ignore donc tout le reste, et c'est la limite principale : elle ne
+  sait pas si le compte est déjà client Esker, s'il y a une opportunité Fluxym
+  en cours, quelle est la taille de l'entreprise, ni qui d'entre nous connaît
+  déjà la personne. <b>Un contact chaud sur une affaire en cours peut très bien
+  être classé C.</b> Si vous savez quelque chose que la formule ne sait pas,
+  c'est vous qui avez raison : corrigez la priorité dans la fiche.</p>
+
+  <h2>Les trois niveaux</h2>
+  <table class="tbl">
+    <tr><th>Niveau</th><th>Ce que ça veut dire concrètement</th></tr>
+    <tr><td><i class="bdg A">A</i></td><td>À voir absolument. On le contacte avant l'événement, et on va le chercher s'il ne vient pas au stand.</td></tr>
+    <tr><td><i class="bdg B">B</i></td><td>À voir si possible. On l'aborde s'il passe, on le relance s'il reste du temps.</td></tr>
+    <tr><td><i class="bdg">C</i></td><td>Opportuniste. On l'accueille bien s'il vient, on ne va pas le chercher.</td></tr>
+  </table>
+
+  <h2>Les règles, dans l'ordre où elles s'appliquent</h2>
+  <p>La première règle qui correspond gagne.</p>
+  <table class="tbl">
+    <tr><th>Situation</th><th>Résultat</th><th>Pourquoi</th></tr>
+    <tr><td>Collègue Fluxym</td><td>hors périmètre</td><td>Masqué par défaut dans l'annuaire.</td></tr>
+    <tr><td>Équipe Esker, C-level / VP / Director</td><td><b>B</b></td><td>Relation partenaire à entretenir. Plafonné à B : la file A reste la file commerciale.</td></tr>
+    <tr><td>Équipe Esker, autres</td><td><b>C</b></td><td>À saluer si l'occasion se présente.</td></tr>
+    <tr><td>Analyste ou presse</td><td><b>C</b></td><td>Utile pour la visibilité, pas pour le pipeline.</td></tr>
+    <tr><td>Exposant ou sponsor</td><td><b>B</b></td><td>Partenariat possible, pas un prospect direct.</td></tr>
+    <tr><td>Client / prospect, <b>C-level, VP ou Director</b> sur AP, AR, Finance, IT ou direction générale</td><td><b>A</b></td><td>Décideur sur notre cœur de cible.</td></tr>
+    <tr><td>Client / prospect, <b>Manager</b> commercial ou marketing</td><td><b>C</b></td><td>Hors de notre sujet, même à un bon niveau.</td></tr>
+    <tr><td>Client / prospect, <b>Manager</b> sur les autres fonctions</td><td><b>B</b></td><td>Influence le choix, rarement seul décideur.</td></tr>
+    <tr><td>Client / prospect, <b>contributeur AP ou AR</b></td><td><b>B</b></td><td>Utilisateur quotidien de la solution : le meilleur prescripteur interne, et le plus facile à aborder sur un stand.</td></tr>
+    <tr><td>Tout le reste</td><td><b>C</b></td><td>Pas de signal fort, ou intitulé de poste trop vague pour trancher.</td></tr>
+  </table>
+
+  <h2>Le bonus « compte qui se déplace en groupe »</h2>
+  <p>Pour un client ou prospect, si <b>4 personnes ou plus de la même société</b>
+  sont inscrites, la priorité monte d'un cran (C devient B, B devient A). Une
+  entreprise qui envoie sept personnes à un événement Esker a un projet en
+  cours : c'est un signal plus fiable que l'intitulé de poste d'un individu
+  isolé. Le bonus ne s'applique pas aux équipes Esker ni aux exposants, dont
+  les effectifs ne veulent rien dire.</p>
+  <div id="prio-groupes"></div>
+
+  <h2>Comment est déduite la séniorité</h2>
+  <p>Par mots-clés dans l'intitulé, du plus fort au plus faible :</p>
+  <ul>
+    <li><b>C-level / VP</b> : chief, CEO, CFO, COO, CIO, president, founder, owner, treasurer, VP, vice president</li>
+    <li><b>Director</b> : director, head of, GPO, controller</li>
+    <li><b>Manager</b> : manager, lead, supervisor, principal, partner</li>
+    <li><b>Contributeur</b> : tout le reste</li>
+  </ul>
+  <p>Même principe pour la fonction métier : AP / P2P, AR / O2C / Credit,
+  Finance / Treasury, IT / ERP / Data, Direction générale,
+  Sales / Marketing / Partner, sinon <i>Autre</i>. Un intitulé exotique
+  ou en langue locale finit en <i>Autre</i> et fait donc baisser la
+  priorité : ce n'est pas un manque d'intérêt, c'est un manque d'information.</p>
+
+  <h2>Corriger une priorité</h2>
+  <p>Dans la fiche d'un participant, le champ <b>Priorité de contact</b> est
+  modifiable. Ce que vous mettez remplace la suggestion, la fiche est marquée
+  d'une étoile (<b>✱</b>) dans l'annuaire, et votre nom est enregistré. La
+  suggestion d'origine reste conservée : un bouton <i>Revenir à la
+  suggestion</i> permet de défaire le changement à tout moment. Un recalcul
+  global de la formule ne touche jamais une priorité fixée à la main.</p>
+
+  <h2>Priorités déjà corrigées par l'équipe</h2>
+  <div id="prio-manuelles"></div>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/methode.js"></script>
+</body>
+</html>

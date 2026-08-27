@@ -128,6 +128,7 @@ combien de contacts redeviendront libres.
 ├── .nojekyll                     sans lui, Pages ignore les dossiers servis
 ├── login.html                    js/login.js
 ├── index.html                    js/app.js      annuaire, attribution, suivi
+├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
 ├── css/app.css
@@ -164,6 +165,7 @@ Rien à installer, aucune étape de build.
 | **Mon portefeuille** | uniquement mes contacts |
 | **Répartition équipe** | qui a combien, avancement, reste à répartir |
 | **Journal** | historique horodaté des prises et changements de statut |
+| **Méthode** | comment la priorité A/B/C est calculée, et qui l'a corrigée |
 
 **Classement alphabétique par nom de famille.** Comme dans Whova, les cartes
 sont regroupées sous un intertitre par initiale, avec le nombre de personnes
@@ -214,7 +216,44 @@ Rafraîchissement automatique toutes les 20 secondes.
 
 Répartition des cibles par fonction : Finance / Treasury 66, AP / P2P 59,
 AR / O2C / Credit 57, IT / ERP / Data 38, Sales / Marketing / Partner 20,
-Direction générale 15, Autre 39. **88 contacts en priorité A.**
+Direction générale 15, Autre 39.
+
+### Priorité de contact
+
+**117 A, 183 B, 111 C.** La règle complète est exposée dans l'application
+elle-même, page **Méthode** : c'est là qu'il faut la lire et la maintenir, pas
+dans ce fichier que personne n'ouvrira pendant l'événement.
+
+Ce qu'il faut retenir ici :
+
+* La formule ne connaît que trois choses, toutes venant de Whova : société,
+  tags, intitulé de poste. **Aucune donnée commerciale.** Elle ne sait pas qui
+  est déjà client, ni où il y a une affaire en cours. Elle dégrossit 418
+  lignes, elle ne décide pas.
+* Un client ou prospect qui envoie **4 personnes ou plus** gagne un cran de
+  priorité. Un compte qui se déplace en groupe a un projet ; c'est un signal
+  plus fiable qu'un intitulé de poste isolé. Le bonus ne s'applique pas aux
+  équipes Esker ni aux exposants, dont les effectifs ne signifient rien.
+* Les équipes **Esker sont priorisées mais plafonnées à B** : ce sont des
+  relations partenaires, la file A reste la file commerciale.
+* Les **contributeurs AP et AR** sont en B et non en C : ce sont les
+  utilisateurs quotidiens de la solution, donc les meilleurs prescripteurs
+  internes, et les plus faciles à aborder sur un stand.
+
+**La priorité est modifiable dans la fiche.** Quatre colonnes portent
+l'arbitrage : `priority` est la valeur effective, `priority_auto` la
+suggestion de la formule, `priority_why` la phrase d'explication affichée,
+`priority_manual` et `priority_by` disent qui a tranché. Un trigger gèle
+`priority_auto` et `priority_why` côté base : le client peut les lire, pas les
+réécrire, sinon la suggestion d'origine se perdrait au premier arbitrage.
+`priority_manual` n'est pas déclaré par le client, il est **dérivé** de l'écart
+entre la valeur retenue et la suggestion, ce qui rend le bouton *Revenir à la
+suggestion* infaillible.
+
+Pour rejouer la formule après un changement de règle ou un rechargement de
+données, exécuter `select public.recompute_priorities();` depuis le SQL editor.
+La fonction ne touche jamais une priorité fixée à la main, et son droit
+d'exécution est révoqué pour `anon` et `authenticated`.
 
 ### Libellés de société
 

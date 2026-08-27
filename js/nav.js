@@ -5,6 +5,7 @@ window.renderNav = function (active) {
   const me = FX.me;
   const links = [
     ["index.html",  "Annuaire",  true],
+    ["methode.html", "Méthode", true],
     ["compte.html", "Mon compte", true],
     ["admin.html",  "Administration", !!me.is_owner]
   ].filter(l => l[2]);

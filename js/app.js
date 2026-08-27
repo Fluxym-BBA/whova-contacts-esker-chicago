@@ -122,8 +122,9 @@
   function card(r) {
     const mine = r.owner === me.name, taken = r.owner && !mine;
     const tg = r.whova_tags || [], b = [];
-    if (r.priority === "A") b.push('<i class="bdg A">Prio A</i>');
-    if (r.priority === "B") b.push('<i class="bdg B">Prio B</i>');
+    const forced = r.priority_manual ? ' title="Priorité fixée à la main">Prio ' : '>Prio ';
+    if (r.priority === "A") b.push(`<i class="bdg A"${forced}A${r.priority_manual?" ✱":""}</i>`);
+    if (r.priority === "B") b.push(`<i class="bdg B"${forced}B${r.priority_manual?" ✱":""}</i>`);
     if (tg.includes("Speakers"))    b.push('<i class="bdg spk">Speaker</i>');
     if (tg.includes("Exhibitors"))  b.push('<i class="bdg exh">Exposant</i>');
     if (tg.includes("Sponsors"))    b.push('<i class="bdg exh">Sponsor</i>');
@@ -258,6 +259,23 @@ ${me.name} — Fluxym`;
         ${r.seniority?`<i class="bdg">${esc(r.seniority)}</i>`:""}
         ${(r.whova_tags||[]).map(t=>`<i class="bdg loyal">${esc(t)}</i>`).join("")}
       </div>
+      <div class="fld prio-box">
+        <label>Priorité de contact</label>
+        <div class="prio-row">
+          <select id="d-priority">
+            <option value="A" ${r.priority==="A"?"selected":""}>A — à voir absolument</option>
+            <option value="B" ${r.priority==="B"?"selected":""}>B — à voir si possible</option>
+            <option value="C" ${r.priority==="C"?"selected":""}>C — opportuniste</option>
+            <option value="" ${!r.priority?"selected":""}>— hors périmètre —</option>
+          </select>
+          ${r.priority_manual
+            ? `<button class="mini" id="d-prio-reset">Revenir à la suggestion (${esc(r.priority_auto||"—")})</button>`
+            : `<span class="prio-tag">suggestion appliquée</span>`}
+        </div>
+        <p class="prio-why">${esc(r.priority_why || "Aucune explication disponible.")}
+          ${r.priority_manual ? `<br><b>Forcée à la main${r.priority_by?" par "+esc(r.priority_by):""}.</b> Suggestion de la formule : ${esc(r.priority_auto||"—")}.` : ""}
+          <a href="methode.html">Comment est-ce calculé ?</a></p>
+      </div>
       <div class="fld"><label>Responsable Fluxym</label><select id="d-owner">
         <option value="">— non attribué —</option>
         ${team.filter(t=>t.active).map(t=>`<option value="${esc(t.name)}" ${r.owner===t.name?"selected":""}>${esc(t.name)}</option>`).join("")}
@@ -279,10 +297,20 @@ ${me.name} — Fluxym`;
 
     FX.$("#d-copy").onclick = () => navigator.clipboard.writeText(FX.$("#d-msg").textContent)
       .then(() => toast("Message copié", "ok"));
+    /* Revenir a la suggestion : on ne fait pas confiance a la valeur affichee,
+       on relit priority_auto, qui n'est jamais ecrasee par un humain. */
+    const reset = FX.$("#d-prio-reset");
+    if (reset) reset.onclick = async () => {
+      if (await patch(r.id, { priority: r.priority_auto, priority_manual: false, priority_by: null })) {
+        toast("Priorité rendue à la formule", "ok"); drawer(id);
+      }
+    };
     FX.$("#d-save").onclick = async () => {
       const p = { owner: FX.$("#d-owner").value || null, status: FX.$("#d-status").value,
                   meeting_slot: FX.$("#d-slot").value || null,
                   interest: FX.$("#d-interest").value || null, notes: FX.$("#d-notes").value || null };
+      const np = FX.$("#d-priority").value || null;
+      if (np !== r.priority) { p.priority = np; p.priority_manual = true; p.priority_by = me.name; }
       if (p.status !== "A contacter" && !r.contacted_at) p.contacted_at = new Date().toISOString();
       if (await patch(r.id, p)) { toast("Fiche enregistrée", "ok"); closeDrawer(); }
     };
