@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Administration | Stand Esker All Access 2026 — Fluxym</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+<div class="veil">Chargement…</div>
+<nav id="main-nav"></nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="hero-badge">Administration</span>
+    <h1>Les comptes, <em>et qui peut quoi</em></h1>
+    <p>Deux niveaux, pas un de plus. Un <b>propriétaire</b> gère les comptes et les
+       mots de passe. Un <b>membre</b> utilise l'annuaire et ne change que le sien.</p>
+  </div>
+</header>
+
+<main class="wrap pulled">
+
+  <!-- ==========================================================
+       CREATION
+       Le mot de passe peut être laissé vide : la fonction en
+       génère un lisible, à dicter ou coller. Il n'est affiché
+       qu'une fois, juste après la création.
+       ========================================================== -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Créer un compte</h2>
+      <p>Le compte est utilisable immédiatement, sans e-mail de confirmation à cliquer.</p>
+    </div>
+    <form class="form grid2" id="new-form" autocomplete="off">
+      <label>Nom affiché <span class="req">obligatoire</span>
+        <input id="n-name" required placeholder="Lucas Dupont">
+        <small>C'est ce nom qui apparaîtra sur les contacts qu'il prend en charge.</small>
+      </label>
+      <label>Adresse e-mail <span class="req">obligatoire</span>
+        <input id="n-email" type="email" required placeholder="ldupont@fluxym.com">
+        <small>Domaine <code>@fluxym.com</code> exigé. Sert uniquement d'identifiant.</small>
+      </label>
+      <label>Fonction
+        <input id="n-role" placeholder="Consultant avant-vente">
+      </label>
+      <label>Couleur
+        <input id="n-color" type="color" value="#6366f1">
+        <small>Sert à repérer d'un coup d'œil qui suit quel contact.</small>
+      </label>
+      <label>Mot de passe
+        <input id="n-pass" type="text" placeholder="laisser vide pour en générer un">
+        <small>8 caractères minimum si vous le saisissez vous-même.</small>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="n-owner">
+        <span>Propriétaire <small>peut gérer les comptes des autres</small></span>
+      </label>
+      <div class="form-actions">
+        <button type="submit" id="n-btn">Créer le compte</button>
+        <div class="err" id="n-err"></div>
+      </div>
+    </form>
+    <div class="reveal" id="reveal" hidden></div>
+  </section>
+
+  <!-- ==========================================================
+       LISTE
+       ========================================================== -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Comptes existants</h2>
+      <p>Portefeuille = nombre de participants dont la personne est responsable.</p>
+    </div>
+    <div class="tablewrap">
+      <table class="tbl" id="users">
+        <thead><tr>
+          <th>Membre</th><th>Accès</th><th>Portefeuille</th>
+          <th>Dernière connexion</th><th class="ta-r">Actions</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty" id="users-empty" hidden>Aucun compte.</div>
+  </section>
+
+</main>
+
+<div class="modal-back" id="modal-back" hidden></div>
+<div class="modal" id="modal" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/admin.js"></script>
+</body>
+</html>

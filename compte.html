@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mon compte | Stand Esker All Access 2026 — Fluxym</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+<div class="veil">Chargement…</div>
+<nav id="main-nav"></nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="hero-badge">Mon compte</span>
+    <h1>Mon accès, <em>et mon mot de passe</em></h1>
+    <p>Le seul réglage qui n'appartient qu'à vous est votre mot de passe.
+       Personne, pas même le propriétaire de l'application, ne peut le lire.</p>
+  </div>
+</header>
+
+<main class="wrap pulled">
+  <!-- Lecture seule, volontairement : le nom affiché et le niveau d'accès
+       sont posés par le propriétaire. Les rendre modifiables ici laisserait
+       croire qu'on peut s'attribuer un droit soi-même. -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Ce que je suis dans l'outil</h2>
+      <p>Posé par le propriétaire. Si une ligne est fausse, demandez-lui de la corriger.</p>
+    </div>
+    <dl class="deflist" id="me-list"></dl>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Changer mon mot de passe</h2>
+      <p>Le nouveau mot de passe est actif immédiatement. L'ancien cesse aussitôt de fonctionner.</p>
+    </div>
+    <form class="form" id="pw-form" autocomplete="off">
+      <label>Mot de passe actuel
+        <input type="password" id="old" autocomplete="current-password" required>
+      </label>
+      <label>Nouveau mot de passe
+        <input type="password" id="new1" autocomplete="new-password" minlength="8" required>
+        <small>8 caractères minimum.</small>
+      </label>
+      <label>Confirmation
+        <input type="password" id="new2" autocomplete="new-password" minlength="8" required>
+      </label>
+      <button type="submit" id="pw-btn">Changer mon mot de passe</button>
+      <div class="err" id="pw-err"></div>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/compte.js"></script>
+</body>
+</html>

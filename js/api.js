@@ -1,0 +1,78 @@
+/* --------------------------------------------------------------------------
+   Socle commun : client Supabase, garde d'authentification, appel a
+   l'Edge Function d'administration, et quelques utilitaires d'affichage.
+   Tout est expose sous un seul objet global, FX, pour eviter d'avoir a
+   introduire un bundler dans un site volontairement statique.
+   -------------------------------------------------------------------------- */
+window.FX = (() => {
+  const CFG = window.FLUXYM_CONFIG;
+  const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? "").replace(/[&<>"']/g,
+    c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+  function toast(msg, kind = "", ms = 3200) {
+    let t = $("#toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+    t.className = "toast " + kind; t.textContent = msg; t.hidden = false;
+    clearTimeout(t._h); t._h = setTimeout(() => (t.hidden = true), ms);
+  }
+
+  const initials = n => (n || "?").split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0]).join("").toUpperCase();
+  const hue = str => { let h = 0; for (const c of String(str)) h = (h*31 + c.charCodeAt(0)) % 360; return `hsl(${h} 46% 48%)`; };
+  const fmtDate = d => d ? new Date(d).toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" }) : "jamais";
+
+  let ME = null, TEAM = [];
+
+  /* Garde : toute page protegee commence par un await FX.requireSession().
+     Un compte authentifie mais absent de `team` (ou desactive) est deconnecte
+     immediatement plutot que laisse devant une page vide et inexplicable. */
+  async function requireSession() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) { location.replace("login.html"); return new Promise(() => {}); }
+
+    const { data: rows, error } = await sb.from("team").select("*").order("sort_order").order("name");
+    if (error || !rows || !rows.length) {
+      await sb.auth.signOut();
+      location.replace("login.html?denied=1");
+      return new Promise(() => {});
+    }
+    TEAM = rows;
+    ME = rows.find(r => r.user_id === data.session.user.id) || null;
+    if (!ME) {
+      await sb.auth.signOut();
+      location.replace("login.html?denied=1");
+      return new Promise(() => {});
+    }
+    ME.auth_email = data.session.user.email;
+    document.body.classList.add("ready");
+    return { me: ME, team: TEAM, session: data.session };
+  }
+
+  /* Appel a l'Edge Function. Le jeton de session est transmis : c'est lui,
+     et lui seul, qui prouve que l'appelant est proprietaire. */
+  async function admin(action, payload = {}) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error("Session expiree");
+    const res = await fetch(`${CFG.SUPABASE_URL}/functions/v1/admin-users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": CFG.SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ action, ...payload })
+    });
+    const out = await res.json().catch(() => ({ error: "Reponse illisible du serveur" }));
+    if (!res.ok) throw new Error(out.error || `Erreur ${res.status}`);
+    return out;
+  }
+
+  const logout = async () => { await sb.auth.signOut(); location.replace("login.html"); };
+
+  return { sb, CFG, $, $$, esc, toast, initials, hue, fmtDate,
+           requireSession, admin, logout,
+           get me(){ return ME; }, get team(){ return TEAM; } };
+})();

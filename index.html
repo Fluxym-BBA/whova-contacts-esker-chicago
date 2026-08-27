@@ -2,104 +2,63 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b1b34">
-<title>Fluxym · Stand Esker All Access 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
+<div class="veil">Chargement de l'annuaire…</div>
+<nav id="main-nav"></nav>
 
-<!-- ====================== LOGIN ====================== -->
-<div id="login" class="login-wrap">
-  <form class="login-card" id="login-form">
-    <div class="brand">FLUXYM</div>
-    <h1>Stand Esker All&nbsp;Access 2026</h1>
-    <p class="sub">Rosemont, IL · 8-10 septembre 2026</p>
-    <label>Email
-      <input type="email" id="email" autocomplete="username" required placeholder="prenom.nom@fluxym.com">
-    </label>
-    <label>Mot de passe
-      <input type="password" id="password" autocomplete="current-password" required>
-    </label>
-    <button type="submit" id="login-btn">Se connecter</button>
-    <div class="err" id="login-err"></div>
-  </form>
+<section class="kpis wrap" id="kpis"></section>
+
+<div class="tabs wrap">
+  <button class="tab on" data-view="list">Annuaire</button>
+  <button class="tab" data-view="mine">Mon portefeuille <span class="pill" id="mine-count">0</span></button>
+  <button class="tab" data-view="team">Répartition équipe</button>
+  <button class="tab" data-view="log">Journal</button>
+  <button class="ghost" id="refresh-btn" title="Rafraîchir">&#8635;</button>
 </div>
 
-<!-- ====================== APP ====================== -->
-<div id="app" hidden>
-
-  <header class="topbar">
-    <div class="topbar-l">
-      <span class="brand-sm">FLUXYM</span>
-      <span class="sep"></span>
-      <span class="evt">Esker All Access 2026</span>
-    </div>
-    <div class="topbar-r">
-      <span class="me" id="me-chip"></span>
-      <button class="ghost" id="refresh-btn" title="Rafraichir">&#8635;</button>
-      <button class="ghost" id="logout-btn">Deconnexion</button>
-    </div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab active" data-view="list">Annuaire</button>
-    <button class="tab" data-view="mine">Mon portefeuille <span class="pill" id="mine-count">0</span></button>
-    <button class="tab" data-view="team">Repartition equipe</button>
-    <button class="tab" data-view="log">Journal</button>
-  </nav>
-
-  <section class="kpis" id="kpis"></section>
-
-  <!-- ---------- VUE LISTE ---------- -->
+<main class="wrap">
   <section class="view" id="view-list">
     <div class="toolbar">
-      <input type="search" id="q" placeholder="Rechercher un nom, une societe, un poste...">
-      <select id="f-priority"><option value="">Priorite : toutes</option><option value="A">A - prioritaire</option><option value="B">B</option><option value="C">C</option></select>
+      <input type="search" id="q" placeholder="Rechercher un nom, une société, un poste…">
+      <select id="f-priority"><option value="">Priorité : toutes</option><option value="A">A — prioritaire</option><option value="B">B</option><option value="C">C</option></select>
       <select id="f-segment"><option value="">Segment : tous</option></select>
       <select id="f-function"><option value="">Fonction : toutes</option></select>
-      <select id="f-seniority"><option value="">Seniorite : toute</option></select>
-      <select id="f-owner"><option value="">Attribution : toutes</option><option value="__none__">Non attribue</option></select>
+      <select id="f-seniority"><option value="">Séniorité : toute</option></select>
+      <select id="f-owner"><option value="">Attribution : toutes</option><option value="__none__">Non attribué</option></select>
       <select id="f-status"><option value="">Statut : tous</option></select>
-      <select id="f-company"><option value="">Societe : toutes</option></select>
-      <label class="chk"><input type="checkbox" id="f-hide-esker" checked> Masquer Esker &amp; Fluxym</label>
-      <button class="ghost" id="reset-btn">Reinitialiser</button>
+      <select id="f-company"><option value="">Société : toutes</option></select>
+      <label class="chk"><input type="checkbox" id="f-hide" checked> Masquer Esker &amp; Fluxym</label>
+      <button class="ghost" id="reset-btn">Réinitialiser</button>
       <button class="ghost" id="export-btn">Export CSV</button>
-      <span class="count" id="result-count"></span>
+      <span class="count" id="count"></span>
     </div>
     <div class="grid" id="grid"></div>
-    <div class="empty" id="empty" hidden>Aucun participant ne correspond a ces filtres.</div>
+    <div class="empty" id="empty" hidden>Aucun participant ne correspond à ces filtres.</div>
   </section>
 
-  <!-- ---------- VUE MON PORTEFEUILLE ---------- -->
   <section class="view" id="view-mine" hidden>
     <div class="grid" id="grid-mine"></div>
-    <div class="empty" id="empty-mine" hidden>Tu n'as encore personne dans ton portefeuille. Va dans l'annuaire et clique sur "Je prends".</div>
+    <div class="empty" id="empty-mine" hidden>Votre portefeuille est vide. Dans l'annuaire, cliquez sur « Je prends ».</div>
   </section>
 
-  <!-- ---------- VUE EQUIPE ---------- -->
-  <section class="view" id="view-team" hidden>
-    <div id="team-board"></div>
-  </section>
+  <section class="view" id="view-team" hidden><div id="team-board"></div></section>
+  <section class="view" id="view-log" hidden><div id="log-list"></div></section>
+</main>
 
-  <!-- ---------- VUE JOURNAL ---------- -->
-  <section class="view" id="view-log" hidden>
-    <div id="log-list"></div>
-  </section>
-
-</div>
-
-<!-- ====================== DRAWER FICHE ====================== -->
-<div class="drawer-back" id="drawer-back" hidden></div>
+<div class="modal-back" id="drawer-back" hidden></div>
 <aside class="drawer" id="drawer" hidden></aside>
 
-<div class="toast" id="toast" hidden></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js"></script>
-<script src="assets/app.js"></script>
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/app.js"></script>
 </body>
 </html>
