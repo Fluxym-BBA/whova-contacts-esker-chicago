@@ -11,6 +11,42 @@
   const SEG_FLUXYM = "Fluxym (nous)", SEG_ESKER = "Esker (hote)";
   const { $, $$, esc, toast } = FX;
 
+  const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  /* Initiale de classement : le nom de famille, sans accent ni particule
+     typographique. Tout ce qui n'est pas une lettre tombe dans "#". */
+  function initialOf(r) {
+    const base = (r.last_name || r.full_name || "").trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/^["'`(\[]+/, "");
+    const c = (base[0] || "").toUpperCase();
+    return /[A-Z]/.test(c) ? c : "#";
+  }
+  const sortKey = r => (initialOf(r) === "#" ? "zzz" : "") +
+    [r.last_name, r.first_name, r.full_name].filter(Boolean).join(" ")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  /* Regroupe les cartes par initiale et intercale un intertitre pleine
+     largeur. Seules les lettres presentes dans la liste filtree sortent. */
+  function groupsOf(list) {
+    const by = new Map();
+    [...list].sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
+      .forEach(r => {
+        const k = initialOf(r);
+        (by.get(k) || by.set(k, []).get(k)).push(r);
+      });
+    return by;
+  }
+  function gridHtml(list, prefix) {
+    let out = "";
+    for (const [letter, rows] of groupsOf(list)) {
+      out += `<h3 class="alpha" id="${prefix}-${letter === "#" ? "num" : letter}">
+        <span class="alpha-l">${letter}</span>
+        <span class="alpha-n">${rows.length}</span></h3>` + rows.map(card).join("");
+    }
+    return out;
+  }
+
   let ROWS = [];
   const colorOf = n => (team.find(t => t.name === n) || {}).color || "#64748b";
 
@@ -119,12 +155,20 @@
 
   function render() {
     const list = ROWS.filter(match);
-    $("#grid").innerHTML = list.map(card).join("");
+    const present = new Set([...list].map(initialOf));
+    $("#grid").innerHTML = gridHtml(list, "g");
     $("#empty").hidden = list.length > 0;
     $("#count").textContent = `${list.length} participant${list.length>1?"s":""}`;
 
+    /* L'index ne propose que les lettres reellement presentes apres filtrage :
+       une lettre cliquable qui ne mene nulle part est un piege. */
+    $("#alpha-index").innerHTML = ALPHABET.concat(present.has("#") ? ["#"] : [])
+      .map(l => present.has(l)
+        ? `<a href="#g-${l === "#" ? "num" : l}" data-jump="${l}">${l}</a>`
+        : `<span>${l}</span>`).join("");
+
     const mine = ROWS.filter(r => r.owner === me.name);
-    $("#grid-mine").innerHTML = mine.map(card).join("");
+    $("#grid-mine").innerHTML = gridHtml(mine, "m");
     $("#empty-mine").hidden = mine.length > 0;
     $("#mine-count").textContent = mine.length;
 

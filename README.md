@@ -165,6 +165,15 @@ Rien à installer, aucune étape de build.
 | **Répartition équipe** | qui a combien, avancement, reste à répartir |
 | **Journal** | historique horodaté des prises et changements de statut |
 
+**Classement alphabétique par nom de famille.** Comme dans Whova, les cartes
+sont regroupées sous un intertitre par initiale, avec le nombre de personnes
+dans le groupe, et une barre d'index A-Z au-dessus de la liste pour sauter
+directement à une lettre. L'index ne rend cliquables que les lettres
+réellement présentes après filtrage : une lettre qui ne mène nulle part est
+un piège. L'initiale est calculée sur le nom de famille, accents et guillemets
+retirés ; ce qui ne commence pas par une lettre atterrit dans un groupe `#`
+placé en fin de liste. Le même regroupement s'applique à *Mon portefeuille*.
+
 **Esker et Fluxym se filtrent séparément.** Deux cases distinctes, parce que
 les deux populations n'ont rien à voir : *Masquer Fluxym* est cochée par
 défaut (nos propres collègues n'ont rien à faire dans l'annuaire), *Masquer
