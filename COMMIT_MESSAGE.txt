@@ -1,111 +1,58 @@
-feat: administration des comptes, deux niveaux, et restructuration du front
+fix(front): declare la favicon dans les cinq pages
 
-Ajoute la gestion des comptes utilisateurs demandee : un proprietaire cree
-les comptes et pose les mots de passe, chaque membre change le sien. Le
-front est reorganise en pages separees avec un socle commun, sur le modele
-de Santiago-performances.
-
---------------------------------------------------------------------------
-NIVEAUX D'ACCES
---------------------------------------------------------------------------
-Deux seulement, membre et proprietaire.
-
-  Membre        annuaire, attribution, notes, et son propre mot de passe.
-  Proprietaire  tout cela, plus la creation de comptes, la reinitialisation
-                des mots de passe, le renommage, l'activation et la
-                suppression.
-
-Bruno Bartoli est proprietaire. Les quatre autres comptes existants sont
-membres.
+Le fichier assets/favicon.ico etait bien present dans le depot et bien
+servi par GitHub Pages, mais aucune page ne le declarait : l'onglet du
+navigateur restait vide. Deposer une icone dans un dossier ne suffit pas,
+il faut une balise qui la designe.
 
 --------------------------------------------------------------------------
-POURQUOI UNE EDGE FUNCTION
+CE QUI CHANGE
 --------------------------------------------------------------------------
-Creer un compte ou reinitialiser un mot de passe exige la cle service_role.
-Cette cle ne peut pas vivre dans un site statique servi par GitHub Pages :
-elle y serait lisible par n'importe qui et donnerait un acces total a la
-base, RLS comprises.
+Deux lignes ajoutees dans le <head>, juste apres le <title>, sur chacune
+des cinq pages : index.html, login.html, admin.html, compte.html et
+methode.html.
 
-L'Edge Function `admin-users` est donc le seul detenteur de cette cle. Elle
-autorise en quatre etapes, dans cet ordre : jeton present, signature
-validee par Supabase, fiche `team` lue AVEC LES DROITS DE L'APPELANT, et
-enfin proprietaire actif. Lire le profil avec les droits de l'appelant plutot
-qu'avec la cle privilegiee est deliberé : une regle RLS mal ecrite ne peut
-pas elargir la vue de quelqu'un.
+  <link rel="icon" href="./assets/favicon.ico" sizes="any">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
 
-Actions exposees : list, create, password, update, delete.
+Rien d'autre n'est touche : ni le CSS, ni le JS, ni le contenu des pages.
 
 --------------------------------------------------------------------------
-GARDE-FOUS
+POURQUOI DEUX BALISES
 --------------------------------------------------------------------------
-* Le dernier proprietaire actif ne peut etre ni supprime, ni retrograde, ni
-  desactive. Verifie dans l'Edge Function ET par un declencheur en base :
-  une manipulation faite depuis le tableau de bord Supabase ne passe pas par
-  la fonction, la barriere serait donc contournable avec un seul controle.
-* On ne peut pas retirer ses propres droits ni supprimer son propre compte.
-* Creation restreinte au domaine @fluxym.com.
-* Declencheur handle_new_user : tout compte cree cote auth obtient sa fiche
-  `team`, y compris s'il est cree depuis le tableau de bord. Sans lui, un
-  tel compte pourrait se connecter sans rien voir et l'erreur serait
-  incomprehensible.
-* email_confirm pose a la creation et a chaque reinitialisation : sinon le
-  compte existe mais refuse la connexion, et l'echec ressemble a un mot de
-  passe errone.
-* Changement de mot de passe personnel : l'ancien est exige et verifie en le
-  rejouant, pour qu'un poste laisse deverrouille ne serve pas a enfermer son
-  proprietaire dehors.
-* Suppression : le nom exact doit etre retape, et le nombre de contacts qui
-  seront liberes est annonce avant. La desactivation est proposee comme
-  alternative conservant le portefeuille.
+`rel="icon"` est la forme normalisee, comprise par tous les navigateurs
+actuels. `rel="shortcut icon"` est l'ancienne forme, conservee pour les
+navigateurs et les integrations qui ne lisent que celle-la. Les deux
+pointent le meme fichier : aucune requete supplementaire, le navigateur
+n'en telecharge qu'une.
+
+`sizes="any"` evite qu'un navigateur qui trouverait par ailleurs une icone
+SVG ou PNG hypothetique prefere celle-ci a tort. L'ICO livre contient
+quatre tailles reelles, 16, 24, 32 et 48 pixels, donc le navigateur choisit
+la bonne selon l'ecran sans qu'on ait a fournir plusieurs fichiers.
 
 --------------------------------------------------------------------------
-MOTS DE PASSE
+POURQUOI UN CHEMIN RELATIF
 --------------------------------------------------------------------------
-Generateur lisible : trois groupes de quatre signes separes par des tirets,
-alphabet de 31 caracteres sans les signes qu'on confond (0/O, 1/l/I), soit
-environ 59 bits. Un mot de passe est fait pour etre dicte ou colle une fois,
-puis remplace par son porteur : lisible avant d'etre long.
+`./assets/favicon.ico` et non `/assets/favicon.ico` : le site est publie
+sous un sous-chemin, /whova-contacts-esker-chicago/. Un chemin absolu
+partant de la racine pointerait sur le domaine github.io lui-meme et
+renverrait une 404. Toutes les pages etant a la racine du depot, le chemin
+relatif est valable pour les cinq, et resterait valable si le site etait
+un jour servi sur un domaine propre.
 
-Les identifiants ne sont affiches qu'une seule fois apres creation ou
-reinitialisation, avec un bouton qui copie un message pret a transmettre.
-Rien n'est stocke en clair, rien ne peut etre relu ensuite.
-
---------------------------------------------------------------------------
-RESTRUCTURATION DU FRONT
---------------------------------------------------------------------------
-Passage d'un fichier unique a des pages separees partageant un socle, pour
-s'aligner sur les conventions de Santiago-performances.
-
-  login.html   / js/login.js
-  index.html   / js/app.js      annuaire, attribution, suivi
-  compte.html  / js/compte.js   profil et mot de passe
-  admin.html   / js/admin.js    gestion des comptes
-  js/config.js                  URL et cle anon
-  js/api.js                     client, garde d'authentification, appels admin
-  js/nav.js                     navigation partagee
-  css/app.css
-
-La garde requireSession() precede le rendu de chaque page protegee. Un
-compte authentifie mais absent de `team` ou desactive est deconnecte
-immediatement, plutot que laisse devant une page vide. Un voile masque
-l'interface tant que la garde n'a pas tranche.
-
-Le lien Administration n'est rendu que pour un proprietaire : afficher un
-lien qui menerait a un refus est une mauvaise maniere. Ce n'est pas une
-protection, la vraie barriere est cote serveur.
+Le .nojekyll deja present garantit que le dossier assets est publie : sans
+lui, Jekyll ignorerait les dossiers commencant par un underscore et
+transformerait la publication, la raison meme pour laquelle il avait ete
+ajoute au premier commit.
 
 --------------------------------------------------------------------------
-BASE DE DONNEES
+APRES DEPLOIEMENT
 --------------------------------------------------------------------------
-`team` devient le referentiel des comptes : ajout de user_id (lien vers
-auth.users), is_owner et created_at. Les cinq comptes existants sont
-rattaches. is_fluxym() s'appuie desormais sur user_id et non sur l'email du
-jeton. Ajout de is_owner(), de la vue `me`, et des declencheurs
-handle_new_user et protect_last_owner.
+Les navigateurs mettent la favicon en cache tres agressivement, y compris
+son absence. Si l'onglet reste vide une fois Pages redeploye, forcer le
+rechargement par Ctrl/Cmd + Shift + R. En cas de resistance, ajouter un
+numero de version dans les deux balises, ?v=2, ce qui invalide le cache.
 
-`attendees.owner` reference `team.name` en on update cascade : renommer un
-membre fait suivre tous ses contacts, sans reprise manuelle.
-
-Migrations versionnees dans supabase/migrations, fonction dans
-supabase/functions. Le dossier est verse pour reference : schema et fonction
-sont deja deployes, le pousser ne redeploie rien.
+L'icone actuelle est le logo Whova, pas celui de Fluxym. C'est un choix
+d'identite a trancher, pas un defaut technique.
