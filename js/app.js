@@ -8,7 +8,7 @@
   const STATUSES = ["A contacter", "Message envoye", "Repondu", "RDV planifie", "Rencontre", "Sans suite"];
   const LABEL = { "A contacter":"À contacter", "Message envoye":"Message envoyé", "Repondu":"Répondu",
                   "RDV planifie":"RDV planifié", "Rencontre":"Rencontré", "Sans suite":"Sans suite" };
-  const NEUTRAL = ["Esker (hote)", "Fluxym (nous)"];
+  const SEG_FLUXYM = "Fluxym (nous)", SEG_ESKER = "Esker (hote)";
   const { $, $$, esc, toast } = FX;
 
   let ROWS = [];
@@ -30,7 +30,11 @@
   }
 
   /* ---------------- Filtres ---------------- */
-  const F = { q:"", priority:"", segment:"", job_function:"", seniority:"", owner:"", status:"", company:"", hide:true };
+  /* Fluxym est masque par defaut : ce sont nos propres collegues, aucun interet dans
+   l'annuaire. Esker est visible par defaut : les equipes de l'editeur sont des
+   interlocuteurs que nous voulons aussi aller voir sur place. */
+  const F = { q:"", priority:"", segment:"", job_function:"", seniority:"", owner:"", status:"",
+              company:"", hideFluxym:true, hideEsker:false };
 
   team.filter(t => t.active).forEach(t => $("#f-owner").add(new Option(t.name, t.name)));
   STATUSES.forEach(s => $("#f-status").add(new Option(LABEL[s], s)));
@@ -53,15 +57,20 @@
   [["#f-priority","priority"],["#f-segment","segment"],["#f-function","job_function"],
    ["#f-seniority","seniority"],["#f-owner","owner"],["#f-status","status"],["#f-company","company"]]
    .forEach(([s,k]) => $(s).onchange = e => { F[k] = e.target.value; render(); });
-  $("#f-hide").onchange = e => { F.hide = e.target.checked; render(); };
+  $("#f-hide-fluxym").onchange = e => { F.hideFluxym = e.target.checked; render(); };
+  $("#f-hide-esker").onchange  = e => { F.hideEsker  = e.target.checked; render(); };
   $("#reset-btn").onclick = () => {
-    Object.assign(F, { q:"",priority:"",segment:"",job_function:"",seniority:"",owner:"",status:"",company:"" });
-    $("#q").value = ""; $$(".toolbar select").forEach(s => s.value = ""); render();
+    Object.assign(F, { q:"",priority:"",segment:"",job_function:"",seniority:"",owner:"",status:"",company:"",
+                       hideFluxym:true, hideEsker:false });
+    $("#q").value = ""; $$(".toolbar select").forEach(s => s.value = "");
+    $("#f-hide-fluxym").checked = true; $("#f-hide-esker").checked = false;
+    render();
   };
   $("#refresh-btn").onclick = () => load(true);
 
   function match(r) {
-    if (F.hide && NEUTRAL.includes(r.segment)) return false;
+    if (F.hideFluxym && r.segment === SEG_FLUXYM) return false;
+    if (F.hideEsker  && r.segment === SEG_ESKER)  return false;
     for (const k of ["priority","segment","job_function","seniority","status","company"])
       if (F[k] && r[k] !== F[k]) return false;
     if (F.owner === "__none__" && r.owner) return false;
@@ -119,7 +128,9 @@
     $("#empty-mine").hidden = mine.length > 0;
     $("#mine-count").textContent = mine.length;
 
-    const t = ROWS.filter(r => !NEUTRAL.includes(r.segment));
+    /* Seuls nos propres collegues sortent du perimetre de travail : les equipes
+       Esker comptent comme des cibles a part entiere. */
+    const t = ROWS.filter(r => r.segment !== SEG_FLUXYM);
     $("#kpis").innerHTML = [
       ["Cibles", t.length],
       ["Priorité A", t.filter(r => r.priority === "A").length],

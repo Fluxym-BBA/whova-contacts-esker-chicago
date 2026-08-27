@@ -165,6 +165,14 @@ Rien à installer, aucune étape de build.
 | **Répartition équipe** | qui a combien, avancement, reste à répartir |
 | **Journal** | historique horodaté des prises et changements de statut |
 
+**Esker et Fluxym se filtrent séparément.** Deux cases distinctes, parce que
+les deux populations n'ont rien à voir : *Masquer Fluxym* est cochée par
+défaut (nos propres collègues n'ont rien à faire dans l'annuaire), *Masquer
+Esker* est décochée (les équipes de l'éditeur sont des interlocuteurs que
+nous voulons aussi aller voir sur le stand). Les compteurs de l'onglet
+*Répartition équipe* suivent la même logique : seul Fluxym sort du périmètre,
+Esker compte comme cible.
+
 **Anti-doublon** : un participant n'a qu'un seul responsable. S'il est déjà
 pris, le bouton devient *Reprendre* et la confirmation nomme le collègue
 concerné. Toute reprise est journalisée.
@@ -190,10 +198,10 @@ Rafraîchissement automatique toutes les 20 secondes.
 | Segment | Nb | Description |
 |---|---:|---|
 | `Client / Prospect` | 294 | la cible commerciale |
-| `Esker (hote)` | 56 | équipe Esker, speakers, organisateurs |
+| `Esker (hote)` | 56 | équipe Esker, speakers, organisateurs — **visibles**, ce sont aussi des cibles |
 | `Ecosysteme (exposant/sponsor)` | 52 | autres exposants, partenaires, éditeurs |
 | `Analyste / Presse` | 9 | Gartner, IDC, Walker Sands, The Hackett Group… |
-| `Fluxym (nous)` | 7 | nos collègues |
+| `Fluxym (nous)` | 7 | nos collègues, masqués par défaut |
 
 Répartition des cibles par fonction : Finance / Treasury 66, AP / P2P 59,
 AR / O2C / Credit 57, IT / ERP / Data 38, Sales / Marketing / Partner 20,
