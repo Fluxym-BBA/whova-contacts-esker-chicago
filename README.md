@@ -185,13 +185,33 @@ Rafraîchissement automatique toutes les 20 secondes.
 
 ## Segmentation
 
-| Segment | Description |
-|---|---|
-| `Client / Prospect` | la cible commerciale |
-| `Ecosysteme (exposant/sponsor)` | autres exposants, partenaires, éditeurs |
-| `Esker (hote)` | équipe Esker, speakers, organisateurs |
-| `Analyste / Presse` | Gartner, IDC, Walker Sands… |
-| `Fluxym (nous)` | nos collègues |
+**418 participants**, soit l'intégralité de l'annuaire Whova.
+
+| Segment | Nb | Description |
+|---|---:|---|
+| `Client / Prospect` | 294 | la cible commerciale |
+| `Esker (hote)` | 56 | équipe Esker, speakers, organisateurs |
+| `Ecosysteme (exposant/sponsor)` | 52 | autres exposants, partenaires, éditeurs |
+| `Analyste / Presse` | 9 | Gartner, IDC, Walker Sands, The Hackett Group… |
+| `Fluxym (nous)` | 7 | nos collègues |
+
+Répartition des cibles par fonction : Finance / Treasury 66, AP / P2P 59,
+AR / O2C / Credit 57, IT / ERP / Data 38, Sales / Marketing / Partner 20,
+Direction générale 15, Autre 39. **88 contacts en priorité A.**
+
+### Libellés de société
+
+Whova laisse chacun saisir sa société en texte libre : la même entreprise
+apparaissait sous plusieurs libellés (`Milliken and Company` et
+`Milliken & Company`, `Esker` et `Esker Inc`, trois orthographes pour
+`Oil Dri`…). Cela cassait le filtre *Société* et faisait sous-estimer les
+comptes où plusieurs personnes sont présentes : `Milliken` passe de 4 à 7
+personnes une fois regroupé.
+
+Les libellés sont normalisés, et la saisie d'origine est conservée dans
+`attendees.company_raw`. C'est elle qui fait foi si un regroupement s'avère
+abusif. Deux entités volontairement laissées distinctes : `A. Lassonde`
+(Canada) et `Lassonde Pappas & Company` (États-Unis).
 
 Priorité **A** = décideur (C-level, VP, Director) sur une fonction cœur de
 cible (AP/P2P, AR/O2C, Finance, IT/ERP, direction générale).
