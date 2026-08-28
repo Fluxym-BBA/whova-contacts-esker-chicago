@@ -164,7 +164,7 @@ Rien à installer, aucune étape de build.
 
 ### Savoir quelle version est réellement affichée
 
-Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v4`. Ce
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v5`. Ce
 libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
 que la feuille de style chargée est bien la dernière. **Ce numéro doit être
 incrémenté à chaque livraison qui touche `css/app.css`.**
@@ -173,6 +173,38 @@ Le 28 août, une demi-heure a été perdue à se demander si un déploiement ét
 passé : les fichiers étaient corrects dans le dépôt, l'interface semblait
 inchangée, et rien à l'écran ne permettait de trancher. Un marqueur visible
 coûte une ligne de CSS et supprime la question.
+
+### Une seule présentation, quelle que soit la largeur
+
+Jusqu'au 28 août, la bande de lettres latérale, la fiche agrandie et l'échelle
+typographique relevée étaient enfermées dans le palier `max-width:900px`. Sur un
+écran d'ordinateur, **ces éléments n'existaient pas**. Deux conséquences, l'une
+gênante et l'autre coûteuse. Impossible de vérifier depuis un poste de travail
+ce que l'équipe verrait sur le stand. Et surtout, un travail livré pouvait
+sembler absent alors qu'il était en ligne : trois livraisons ont été jugées
+« sans effet » le 28 août pour cette seule raison.
+
+Ce qui s'applique désormais **à toutes les largeurs** : l'échelle typographique
+complète, les cibles à 50px, la ligne d'action de la carte sur deux rangées, la
+bande de lettres latérale, la fiche détaillée en fenêtre centrée, les champs de
+saisie à 16px.
+
+Ce qui reste **propre au téléphone**, parce que lié au petit écran et non à une
+préférence : la colonne unique, le menu burger à la place des liens de
+navigation, la barre d'onglets basse, la fiche en plein écran intégral, les
+feuilles qui montent du bas, le menu de filtres à deux niveaux et le repli du
+tableau de bord.
+
+La fiche détaillée n'est plus un panneau collé au bord droit. Un panneau de
+470px sur un écran large tassait le texte dans un couloir et forçait l'oeil à
+quitter le centre. C'est maintenant une fenêtre centrée de 780px au plus, sur
+fond assombri, qui repasse en plein écran sous 900px.
+
+Point d'attention pour la suite : les règles communes sont regroupées dans un
+bloc unique, **avant** les deux paliers téléphone. Une déclaration ajoutée dans
+un palier téléphone écrase donc son équivalent commun. C'est exactement le
+piège qui a fait survivre les valeurs de la première passe et annulé les
+suivantes sur téléphone.
 
 ### `diag.html`, page de diagnostic d'affichage
 
@@ -214,8 +246,8 @@ par aucune page.
 Les pages appellent leurs fichiers avec une étiquette de version :
 
 ```html
-<link rel="stylesheet" href="./css/app.css?v=20260828d">
-<script src="./js/app.js?v=20260828d"></script>
+<link rel="stylesheet" href="./css/app.css?v=20260828e">
+<script src="./js/app.js?v=20260828e"></script>
 ```
 
 **Cette étiquette doit changer dès qu'un fichier de `css/` ou `js/` change**,
@@ -225,8 +257,8 @@ un correctif, et une partie de l'équipe continue de voir l'ancienne version
 sans le savoir. C'est acceptable en préparation, ce serait très coûteux
 pendant l'événement, où personne n'ira vider un cache entre deux visiteurs.
 
-Convention : date du jour plus une lettre par livraison, `20260828d` étant la
-quatrième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
+Convention : date du jour plus une lettre par livraison, `20260828e` étant la
+cinquième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
 versionnés, ils portent déjà leur propre numéro de version.
 
 ---

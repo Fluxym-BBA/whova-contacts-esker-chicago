@@ -8,7 +8,7 @@
      Elle charge la vraie feuille de style de l'application et mesure ce que
      le navigateur applique reellement, pour repondre a une seule question :
      est-ce que cet appareil recoit bien la derniere version du CSS ? -->
-<link rel="stylesheet" href="./css/app.css?diag=20260828e">
+<link rel="stylesheet" href="./css/app.css?diag=20260828f">
 <style>
   body{margin:0;background:#f1f5f9;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f172a}
   .dg{padding:18px 16px 40px;max-width:640px;margin:0 auto}
@@ -38,7 +38,7 @@
     <tr><td>Seuil de bascule mobile</td><td>900 px</td></tr>
     <tr><td>Mise en page appliquee</td><td id="m2">?</td></tr>
     <tr><td>Taille du nom sur une fiche</td><td id="m3">?</td></tr>
-    <tr><td>Attendu en version 4</td><td>19 px</td></tr>
+    <tr><td>Attendu en version 5</td><td>19 px, toutes largeurs</td></tr>
     <tr><td>Hauteur du bouton Je prends</td><td id="m4">?</td></tr>
     <tr><td>Largeur physique de l'ecran</td><td id="m5">?</td></tr>
     <tr><td>Zoom du navigateur</td><td id="m6">?</td></tr>
@@ -90,17 +90,13 @@
   document.getElementById("m6").textContent = Math.round((window.devicePixelRatio||1)*100)/100;
   document.getElementById("ua").textContent = navigator.userAgent;
   var v = document.getElementById("verdict"), t, c;
-  if(!mobile){
-    c = "neutre";
-    t = "Fenetre de " + w + " px, donc mise en page ordinateur. C'est normal : "
-      + "tous les elements mobiles se declenchent sous 900 px. Reduis la largeur "
-      + "de la fenetre a moins de 900 px, ou ouvre cette page sur ton telephone.";
-  } else if(name >= 18.5){
+  if(name >= 18.5){
     c = "ok";
-    t = "Tout est en place. La derniere feuille de style est chargee et la mise "
-      + "en page telephone est active. Le nom mesure " + name + " px, le bouton "
-      + Math.round(take) + " px de haut, et la bande de lettres doit etre visible "
-      + "sur le bord droit de cet ecran.";
+    t = "Tout est en place. Le nom mesure " + name + " px, le bouton "
+      + Math.round(take) + " px de haut, et la bande de lettres doit etre "
+      + "visible sur le bord droit de cet ecran. Depuis la version 5 c'est "
+      + "vrai a toutes les largeurs, ordinateur compris : cette page fait "
+      + w + " px.";
   } else if(name >= 15.5){
     c = "ko";
     t = "Ton navigateur applique la feuille de style d'avant aujourd'hui. Le nom "
@@ -109,10 +105,9 @@
       + "ou application ajoutee a l'ecran d'accueil.";
   } else {
     c = "ko";
-    t = "La bascule telephone ne s'applique pas, alors que la page ne fait que "
-      + w + " px de large. Le nom mesure " + name + " px, soit la valeur "
-      + "ordinateur. Soit la feuille de style n'est pas chargee du tout, soit "
-      + "elle est tres anterieure. Envoie-moi une capture de cet ecran.";
+    t = "Le nom mesure " + name + " px, soit la valeur d'origine du projet. "
+      + "Soit la feuille de style n'est pas chargee du tout, soit elle est tres "
+      + "anterieure au 28 aout. Envoie-moi une capture de cet ecran.";
   }
   v.className = "verdict " + c; v.textContent = t;
   document.getElementById("force").addEventListener("click", function(e){
