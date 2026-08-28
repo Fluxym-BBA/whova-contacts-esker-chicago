@@ -445,7 +445,7 @@ body.nav-open .nav-menu{display:block}
    C'est la vue de reference pendant l'evenement.
    ========================================================================== */
 @media(max-width:900px){
-  :root{--navh:52px;--sbarh:58px;--tabh:64px;--fs-field:16px}
+  :root{--navh:52px;--sbarh:58px;--tabh:72px;--fs-field:16px}
   body.sheet-open,body.drawer-open{overflow:hidden}
   .wrap{padding:0 12px}
   .form.grid2{grid-template-columns:1fr}
@@ -458,6 +458,7 @@ body.nav-open .nav-menu{display:block}
   .nav-links,.nav-me,.nav-out{display:none}
   .nav-burger{display:flex}
   .nav-brand{font-size:11px}
+  .nav-brand span{white-space:nowrap;overflow:hidden}
   .nav-in{gap:12px}
 
   /* --- Recherche --- */
@@ -509,12 +510,12 @@ body.nav-open .nav-menu{display:block}
     gap:0;padding:5px 4px calc(5px + var(--safe-b));background:rgba(255,255,255,.95);
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);overflow:visible}
   .tab{flex-direction:column;justify-content:center;gap:3px;background:none;border:0;border-radius:10px;
-    padding:4px 2px;min-height:54px;font-size:10.5px;font-weight:700;color:#94a3b8;position:relative}
+    padding:6px 2px;min-height:62px;font-size:12px;font-weight:700;color:#94a3b8;position:relative}
   .tab.on{background:none;color:var(--accent)}
-  .tab .ti{display:block;width:23px;height:23px}
+  .tab .ti{display:block;width:26px;height:26px}
   .tab .tl{line-height:1}
   .tab .pill{position:absolute;top:1px;left:50%;margin-left:6px;background:var(--accent);color:#fff;
-    font-size:10px;font-weight:800;padding:0 5px;min-width:17px;height:17px;display:grid;place-items:center}
+    font-size:11px;font-weight:800;padding:0 6px;min-width:19px;height:19px;display:grid;place-items:center}
   .tab:not(.on) .pill{background:#94a3b8;color:#fff}
 
   /* --- Liste --- */
@@ -549,7 +550,7 @@ body.nav-open .nav-menu{display:block}
   .drawer .x{top:6px;right:12px}
 
   .tm-stats{gap:14px;margin-left:0;width:100%;justify-content:space-between;text-align:left}
-  .logrow{font-size:12.5px;padding:10px 12px;gap:8px}
+  .logrow{font-size:14px;padding:12px;gap:8px}
   .logrow time{width:100%;margin-left:0}
 }
 
@@ -568,40 +569,45 @@ body.nav-open .nav-menu{display:block}
 @media(max-width:900px){
 
   /* --- Lisibilite : tailles revues a la hausse --- */
-  .sfield input{min-height:46px;font-size:16px}
-  .fbtn{min-height:46px;font-size:14px}
-  .iconbtn{width:46px;height:46px}
-  .fchip{font-size:12.5px;padding:7px 9px 7px 12px}
-  .dash-toggle{min-height:46px;font-size:13.5px}
-  .kpi b{font-size:22px}
-  .kpi span{font-size:10.5px}
-  .count{font-size:13.5px}
+  .sfield input{min-height:50px;font-size:16px}
+  .fbtn{min-height:50px;font-size:15px}
+  .iconbtn{width:50px;height:50px}
+  .fchip{font-size:14px;padding:9px 11px 9px 14px}
+  .dash-toggle{min-height:50px;font-size:15px}
+  .kpi b{font-size:24px}
+  .kpi span{font-size:12.5px}
+  .count{font-size:15px}
 
-  .card{padding:13px 14px;gap:10px}
-  .av{width:44px;height:44px;flex:0 0 44px;font-size:16px}
-  .c-name{font-size:16.5px;line-height:1.25}
-  .c-title{font-size:13px;-webkit-line-clamp:2}
-  .c-comp{font-size:14px;margin-top:4px}
-  .c-loc{font-size:12px}
-  .bdg{font-size:10.5px;padding:3px 8px}
-  .c-actions{gap:7px;padding-top:10px}
-  .take{font-size:14px;padding:0 15px;min-height:46px}
-  .c-actions select{min-height:46px}
-  .owner-tag{font-size:12px;padding:8px 11px;max-width:36%}
+  .card{padding:14px;gap:12px}
+  .av{width:52px;height:52px;flex:0 0 52px;font-size:18px}
+  .c-name{font-size:19px;line-height:1.22;font-weight:800}
+  .c-title{font-size:14.5px;-webkit-line-clamp:1}
+  .c-comp{font-size:16px;margin-top:5px;font-weight:700}
+  .c-loc{display:none}
+  .bdg{font-size:13px;padding:4px 10px}
+  /* Trois elements sur une seule ligne, c'etait 109px pour le statut et
+     « Message envoye » tronque. Deux rangees : qui suit le contact et le
+     bouton en haut, le statut en pleine largeur en dessous. L'ordre du
+     balisage est owner, statut, bouton : les places sont donc imposees. */
+  .c-actions{display:grid;grid-template-columns:auto 1fr;gap:9px;padding-top:12px}
+  .owner-tag,.c-actions .bdg{grid-column:1;grid-row:1;font-size:15px;font-weight:800;
+    padding:11px 14px;max-width:none;min-width:0;overflow:hidden}
+  .take{grid-column:2;grid-row:1;width:100%;font-size:16px;padding:0 18px;min-height:50px}
+  .c-actions select{grid-column:1/-1;grid-row:2;width:100%;min-height:50px;font-size:16px}
   .card:active{transform:scale(.995)}
 
   /* --- L'index horizontal cede la place au curseur lateral --- */
   .alpha-index{display:none}
-  #view-list .grid{padding-right:22px}
+  #view-list .grid{padding-right:28px}
   .alpha{margin:16px 0 4px;padding-bottom:7px}
-  .alpha-l{font-size:19px}
+  .alpha-l{font-size:20px}
 
-  .scrub{display:flex;position:fixed;right:0;z-index:70;width:26px;padding:8px 0;
+  .scrub{display:flex;position:fixed;right:0;z-index:70;width:32px;padding:8px 0;
     top:calc(var(--stick) + 16px);bottom:calc(var(--tabh) + var(--safe-b) + 10px);
     flex-direction:column;justify-content:space-around;align-items:center;
     touch-action:none;-webkit-user-select:none;user-select:none;
     background:linear-gradient(90deg,rgba(245,247,251,0),rgba(245,247,251,.9) 55%)}
-  .scrub b{font:800 10px/1 inherit;font-style:normal;color:var(--accent);opacity:.85;
+  .scrub b{font:800 12.5px/1 inherit;font-style:normal;color:var(--accent);opacity:.9;
     width:100%;text-align:center;pointer-events:none}
   .scrub-bubble{display:grid;position:fixed;right:40px;z-index:71;width:76px;height:76px;
     border-radius:22px;background:rgba(15,23,42,.9);color:#fff;place-items:center;
@@ -644,7 +650,7 @@ body.nav-open .nav-menu{display:block}
     background:none;border:0;border-bottom:1px solid #f6f8fb;text-align:left;font-size:16px;color:var(--ink)}
   .fsopt:active{background:#f1f5f9}
   .fsopt span{flex:1;min-width:0}
-  .fsopt em{font-style:normal;color:#94a3b8;font-size:13px;font-weight:600;flex:0 0 auto}
+  .fsopt em{font-style:normal;color:#94a3b8;font-size:14px;font-weight:600;flex:0 0 auto}
   .fsopt svg{width:20px;height:20px;color:var(--accent);flex:0 0 auto}
   .fsopt.on{background:#eff6ff;color:var(--accent);font-weight:700}
   body.sub-open{overflow:hidden}
@@ -657,11 +663,11 @@ body.nav-open .nav-menu{display:block}
   .drawer h2{font-size:21px;padding-right:52px}
   .drawer .d-sub{font-size:14px}
   .d-body{padding:16px 16px 22px}
-  .drawer .fld label{font-size:11.5px}
+  .drawer .fld label{font-size:13px}
   .drawer .fld input,.drawer .fld select,.drawer .fld textarea{min-height:48px;font-size:16px}
   .drawer .fld textarea{min-height:110px}
-  .prio-why{font-size:13px}
-  .msg-box{font-size:13.5px}
+  .prio-why{font-size:14px}
+  .msg-box{font-size:14.5px}
   .d-foot{padding:12px 16px calc(12px + var(--safe-b))}
   .d-save{min-height:52px;font-size:16px}
   .drawer .x{top:calc(12px + var(--safe-t));right:12px;width:40px;height:40px;font-size:22px}
@@ -670,3 +676,12 @@ body.nav-open .nav-menu{display:block}
 @media(prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
 }
+
+/* ==========================================================================
+   MARQUEUR DE VERSION
+   Porte par la feuille de style elle-meme, volontairement : si ce libelle
+   s'affiche, c'est que le CSS charge est bien celui-la. Une demi-heure a
+   ete perdue le 28 aout a se demander si un deploiement etait passe.
+   A incrementer a chaque livraison qui touche css/app.css.
+   ========================================================================== */
+.nav-brand span::after{content:" \00b7 interface v4"}

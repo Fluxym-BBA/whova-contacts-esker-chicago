@@ -125,7 +125,7 @@ combien de contacts redeviendront libres.
 
 ```
 .
-├── .nojekyll                     sans lui, Pages ignore les dossiers servis
+├── .nojekyll                     ABSENT du dépôt au 28/08, à recréer (voir « Déploiement »)
 ├── login.html                    js/login.js
 ├── index.html                    js/app.js      annuaire, attribution, suivi
 ├── methode.html                  js/methode.js  méthode de priorisation
@@ -162,13 +162,39 @@ configuration réellement lue est `js/config.js`.
 
 Rien à installer, aucune étape de build.
 
+### Savoir quelle version est réellement affichée
+
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v4`. Ce
+libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
+que la feuille de style chargée est bien la dernière. **Ce numéro doit être
+incrémenté à chaque livraison qui touche `css/app.css`.**
+
+Le 28 août, une demi-heure a été perdue à se demander si un déploiement était
+passé : les fichiers étaient corrects dans le dépôt, l'interface semblait
+inchangée, et rien à l'écran ne permettait de trancher. Un marqueur visible
+coûte une ligne de CSS et supprime la question.
+
+### `.nojekyll`
+
+**Ce fichier est absent du dépôt au 28 août 2026**, alors qu'une version
+antérieure de ce README le déclarait indispensable. Dans les faits `css/` et
+`js/` sont bien servis, Jekyll n'excluant que les dossiers commençant par un
+souligné. Le recréer reste préférable, par sécurité et parce que le jour où un
+dossier prendra un nom commençant par `_`, le diagnostic sera pénible. Il se
+crée depuis GitHub : *Add file → Create new file*, nommer `.nojekyll`, laisser
+le contenu vide, valider.
+
+Résidus à supprimer quand l'occasion se présente : `COMMIT_MESSAGE.txt` et
+`config.js` à la racine, `assets/app.js` et `assets/styles.css`, plus référencés
+par aucune page.
+
 ### Versionner les appels, à chaque livraison
 
 Les pages appellent leurs fichiers avec une étiquette de version :
 
 ```html
-<link rel="stylesheet" href="./css/app.css?v=20260828c">
-<script src="./js/app.js?v=20260828c"></script>
+<link rel="stylesheet" href="./css/app.css?v=20260828d">
+<script src="./js/app.js?v=20260828d"></script>
 ```
 
 **Cette étiquette doit changer dès qu'un fichier de `css/` ou `js/` change**,
@@ -178,8 +204,8 @@ un correctif, et une partie de l'équipe continue de voir l'ancienne version
 sans le savoir. C'est acceptable en préparation, ce serait très coûteux
 pendant l'événement, où personne n'ira vider un cache entre deux visiteurs.
 
-Convention : date du jour plus une lettre par livraison, `20260828c` étant la
-troisième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
+Convention : date du jour plus une lettre par livraison, `20260828d` étant la
+quatrième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
 versionnés, ils portent déjà leur propre numéro de version.
 
 ---
@@ -298,9 +324,38 @@ Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
   le bouton *Enregistrer* passait sous la barre d'URL de Safari.
 - **Cibles tactiles à 44px minimum** (`--touch`), 46 à 52px pour les actions
   principales et les lignes de menu. *Je prends* faisait 30px de haut.
-- **Tailles de texte revues à la hausse sur téléphone** : nom 16,5px, société
-  14px, intitulé de poste 13px, champs de la fiche 16px. Une interface dense
-  se lit assis à un bureau, pas debout entre deux conversations.
+- **Échelle typographique, troisième passe (28 août).** Les deux premières
+  passes avaient grossi le nom en laissant le reste derrière : intitulé de
+  poste 13px, localisation 12px, pastilles 10,5px, libellés d'onglets 10,5px,
+  lettres du curseur A-Z 10px. Illisible debout, à bout de bras, dans une
+  allée éclairée au néon. Plancher retenu : **rien en dessous de 12px**, et
+  rien en dessous de 13px sur ce qu'on lit en marchant.
+
+  | Élément | Avant | Maintenant |
+  |---|---|---|
+  | Nom | 16,5px | **19px**, gras appuyé |
+  | Société | 14px | **16px**, gras |
+  | Intitulé de poste | 13px sur 2 lignes | **14,5px sur 1 ligne** |
+  | Localisation | 12px | **retirée de la carte** (elle reste dans la fiche) |
+  | Pastilles de priorité | 10,5px | **13px** |
+  | Qui a pris le contact | 12px, largeur ≤ 36% | **15px gras, largeur libre** |
+  | *Je prends* et statut | 46px | **50px** |
+  | Libellés d'onglets bas | 10,5px | **12px**, icônes 26px, barre 72px |
+  | Lettres du curseur A-Z | 10px | **12,5px**, gouttière 32px |
+  | Pastilles de filtre | 12,5px | **14px** |
+  | Libellés du tableau de bord | 10,5px | **12,5px** |
+  | Libellés de champ de la fiche | 11,5px | **13px** |
+
+  Deux arbitrages assumés. La **localisation disparaît de la carte** : elle
+  n'aide pas à décider d'aborder quelqu'un, et la place gagnée sert au nom.
+  L'**intitulé de poste tient sur une seule ligne** : une ligne suffit à
+  situer un interlocuteur, deux lignes de 13px faisaient de la carte un
+  paragraphe. Les deux données restent intégralement dans la fiche.
+
+  La ligne d'action de la carte peut désormais **passer à la ligne**
+  (`flex-wrap`) : le nom de la personne qui a pris le contact n'est plus
+  comprimé dans 36% de la largeur, puisque c'est l'information que l'on vient
+  chercher en cinq secondes.
 
 **Ajout à l'écran d'accueil.** `manifest.webmanifest` et les balises Apple
 permettent de lancer l'application en plein écran, sans barre d'URL.
