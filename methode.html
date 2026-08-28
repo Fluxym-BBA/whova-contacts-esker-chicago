@@ -4,9 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Méthode de priorisation | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="icon" href="./assets/favicon.ico" sizes="any">
-<link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
-<link rel="stylesheet" href="./css/app.css?v=20260828e">
+<link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
 <nav id="main-nav"></nav>
@@ -14,7 +12,7 @@
 <main class="wrap doc">
   <h1>Comment la priorité est déterminée</h1>
   <p class="lead">A, B ou C n'est pas un jugement sur les gens : c'est un ordre
-  de passage calculé automatiquement pour ne pas avoir à lire 418 fiches avant
+  de passage calculé automatiquement pour ne pas avoir à lire 420 fiches avant
   d'ouvrir le stand. La formule dégrossit, vous décidez.</p>
 
   <div class="kpis" id="prio-kpis"></div>
@@ -86,15 +84,58 @@
   suggestion</i> permet de défaire le changement à tout moment. Un recalcul
   global de la formule ne touche jamais une priorité fixée à la main.</p>
 
+  <h2>Qui contacte qui</h2>
+  <p>Le propriétaire d'un contact n'est <b>pas calculé</b> : c'est une décision
+  humaine, et elle se défait en un clic. La répartition initiale du 28 août a
+  suivi cinq règles, dans cet ordre.</p>
+  <table class="tbl">
+    <tr><th>Population</th><th>Pour qui</th></tr>
+    <tr><td>Dirigeants, C-level et VP, chez les clients et les exposants</td><td>Christophe et Karina</td></tr>
+    <tr><td>Fonction systèmes d'information, ERP et données, hors dirigeants</td><td>Vincent</td></tr>
+    <tr><td>Salariés Esker francophones</td><td>Maxime et Bruno</td></tr>
+    <tr><td>Salariés Esker anglophones : les 18 plus séniors, puis les opérationnels</td><td>Karina, puis Enzo</td></tr>
+    <tr><td>Clients et prospects restants, par société entière</td><td>Lucas, Bruno et Maxime</td></tr>
+  </table>
+  <p><b>157 contacts sont restés volontairement libres</b>, dont les 9 analystes
+  et journalistes : l'objectif est d'une soixantaine de contacts par personne,
+  servez-vous.</p>
+  <p>Deux choses à savoir. Dans la dernière règle, <b>une société n'a qu'un seul
+  propriétaire</b>, pour ne jamais solliciter deux fois le même compte ; les
+  règles précédentes, elles, coupent en travers des sociétés, donc un directeur
+  financier peut être chez Christophe et son responsable applicatif chez
+  Vincent, c'est voulu. Et le partage francophone / anglophone chez Esker est
+  une <b>déduction</b>, pas une donnée : la base ne connaît la localisation que
+  de 24 des 56 salariés Esker. Un contact mal placé, ça se reprend ou ça se
+  libère, sans demander la permission.</p>
+
+  <h2>Quel message pour qui</h2>
+  <p>Le message prêt à copier dans la fiche n'est pas le même pour tout le
+  monde, et c'est délibéré : le message unique des premières versions demandait
+  à un salarié d'Esker comment il utilisait Esker, et à un prospect qui n'a
+  jamais rien signé comment il l'utilisait aujourd'hui. La famille est déduite
+  du segment, vous n'avez rien à choisir.</p>
+  <table class="tbl">
+    <tr><th>Famille</th><th>Angle du message</th></tr>
+    <tr><td>Client ou prospect</td><td>Son processus, AP, AR, finance ou ERP selon sa fonction, sans jamais présumer qu'il est déjà client Esker. Version courte et créneau de vingt minutes pour un dirigeant.</td></tr>
+    <tr><td>Équipe Esker</td><td>On ne lui demande pas comment il utilise son propre produit. On vient chercher les comptes qu'il couvre et ce qu'il attend d'un intégrateur.</td></tr>
+    <tr><td>Exposant ou partenaire</td><td>Entre pairs, aucun pitch : territoires complémentaires et affaires hors périmètre.</td></tr>
+    <tr><td>Analyste ou presse</td><td>Le point de vue de l'intégrateur sur le marché, pas une solution.</td></tr>
+    <tr><td>Collègue Fluxym</td><td>Pas de message, le bloc disparaît de la fiche.</td></tr>
+  </table>
+  <p>Les messages sont en anglais, l'événement se tient à Rosemont. Si le
+  contact porte le tag Whova <b>Speakers</b>, une phrase sur sa session est
+  ajoutée automatiquement : 48 des 56 salariés Esker et 12 clients sont dans ce
+  cas. Le message reste un point de départ, pas un script.</p>
+
   <h2>Priorités déjà corrigées par l'équipe</h2>
   <div id="prio-manuelles"></div>
 </main>
 
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260828e"></script>
-<script src="./js/api.js?v=20260828e"></script>
-<script src="./js/nav.js?v=20260828e"></script>
-<script src="./js/methode.js?v=20260828e"></script>
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/nav.js"></script>
+<script src="./js/methode.js"></script>
 </body>
 </html>
