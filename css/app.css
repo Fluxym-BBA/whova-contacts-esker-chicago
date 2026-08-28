@@ -560,7 +560,7 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
   /* --- Filtres en feuille remontante --- */
   .filters{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;max-width:none;margin:0;padding:0;
     border:0;border-radius:20px 20px 0 0;box-shadow:0 -12px 44px rgba(15,23,42,.28);z-index:120;
-    display:flex;flex-direction:column;max-height:88vh;max-height:88dvh;
+    display:flex;flex-direction:column;max-height:92vh;max-height:92dvh;
     transform:translateY(101%);pointer-events:none;transition:transform .28s cubic-bezier(.32,.72,0,1)}
   body.sheet-open .filters{transform:none;pointer-events:auto}
   .sheet-back{display:block}
@@ -571,15 +571,31 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
   .sheet-head h2{margin:0;font-size:17px}
   .sheet-x{margin-left:auto;background:#f1f5f9;border:0;width:36px;height:36px;border-radius:50%;font-size:20px;line-height:1;color:#475569}
   .fl-wide,.fl-switches,.fl-actions{grid-column:auto}
-  /* min-height:0 est la ligne qui compte. Sans elle, un enfant flex refuse de
-     retrecir sous la hauteur de son contenu (min-height:auto par defaut) :
-     overflow-y:auto ne sert alors a rien, le corps pousse la feuille au-dela de
-     l'ecran et, comme elle est ancree en bas, c'est son sommet qui disparait.
-     Symptome constate le 28/08 sur un Galaxy S26 : les filtres Priorite et
-     Attribution, premiers de la liste, etaient hors d'atteinte. */
-  .filters-body{grid-template-columns:1fr;gap:14px;padding:14px 16px 16px;
+  /* display:block, et non plus grid. Ce conteneur herite de align-items:end,
+     pose ligne 230 pour aligner les sept selects par le bas sur ordinateur. Le
+     palier telephone redefinissait les colonnes, le gap et le padding, et
+     ajoutait overflow-y:auto, mais jamais l'alignement. Or dans un conteneur
+     scrollable dont le contenu est aligne autrement qu'au debut, le
+     debordement se produit du cote oppose a l'alignement, ici vers le haut, et
+     cette zone n'appartient pas a la zone de defilement : elle est hors
+     d'atteinte, definitivement, et le navigateur signale qu'il n'y a rien a
+     faire defiler.
+
+     Symptome constate le 28/08 sur un Galaxy S26 : la feuille de filtres
+     s'ouvrait sur Statut, les lignes Priorite et Attribution avaient disparu
+     par le haut, et aucun geste ne les ramenait, pas meme un effet elastique.
+     C'est-a-dire les deux filtres qui servent le plus sur un stand.
+
+     Le flux normal en bloc n'a ni alignement a respecter ni piste a repartir :
+     il empile du haut vers le bas et son debordement est toujours atteignable.
+     align-items et grid-template-columns sont neutralises explicitement, pour
+     qu'une future modification du palier ordinateur ne puisse pas revenir les
+     imposer ici. Le gap devient une marge, inoperante en bloc. */
+  .filters-body{display:block;grid-template-columns:none;align-items:normal;
+    padding:14px 16px 16px;
     flex:1 1 auto;min-height:0;overflow-y:auto;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  .filters-body>*+*{margin-top:14px}
   .fl select{min-height:48px}
   .fl-switches{flex-direction:column;align-items:stretch}
   .chk{min-height:48px}

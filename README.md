@@ -297,6 +297,49 @@ Elle appelle le CSS avec `?diag=...`, une URL utilisee nulle part ailleurs,
 pour qu'aucune entree de cache existante ne puisse la servir. Elle ne charge ni
 `js/config.js` ni `js/api.js` et ne touche a aucune donnee.
 
+### Un conteneur scrollable n'aligne jamais son contenu autrement qu'au début
+
+Défaut corrigé le 28 août au soir, à retenir parce qu'il est silencieux et qu'il
+se reproduira.
+
+`.filters-body` porte `align-items:end` sur ordinateur, pour aligner les sept
+listes déroulantes par le bas sur une même rangée. Le palier téléphone
+redéfinissait les colonnes, l'espacement et le padding, et ajoutait
+`overflow-y:auto`, mais jamais l'alignement.
+
+Or dans un conteneur scrollable dont le contenu est aligné vers la fin ou au
+centre, le débordement se produit du côté opposé à l'alignement, ici vers le
+haut, et **cette zone n'appartient pas à la zone de défilement**. Elle est dans
+la page, mesurable en JavaScript, et strictement inatteignable au doigt comme à
+la souris. Le navigateur annonce `scrollHeight === clientHeight` : il n'y a rien
+à faire défiler, donc pas même un effet élastique pour signaler qu'il manque
+quelque chose au-dessus.
+
+Concrètement, la feuille de filtres s'ouvrait sur `Statut`. Les lignes
+`Priorité` et `Attribution` avaient disparu par le haut. La feuille paraissait
+entière, poignée et pied visibles, et aucun geste ne ramenait les deux lignes.
+C'est-à-dire les deux filtres qui répondent à la seule question qui compte sur
+le stand : ce contact est-il déjà pris, et par qui.
+
+Le palier téléphone passe donc en `display:block`, avec `align-items:normal` et
+`grid-template-columns:none` posés explicitement, pour qu'une future
+modification de l'affichage ordinateur ne puisse pas les réimposer. Le flux
+normal en bloc n'a ni alignement à respecter ni piste à répartir : il empile du
+haut vers le bas, et son débordement est toujours atteignable.
+
+Deux fausses pistes ont été suivies avant celle-là, autant les noter pour ne pas
+les reprendre. Ce n'était pas `min-height:auto` sur un élément flex : quand un
+élément flex porte `overflow-y:auto`, sa taille minimale automatique se résout à
+zéro d'après la spécification, il rétrécit donc correctement. Ce n'était pas non
+plus la hauteur de la feuille : `max-height` était respectée, le sommet n'était
+jamais coupé. Les `min-height:0` ajoutés sur `.filters-body`, `.d-body` et
+`.fsub-list` sont conservés parce qu'ils sont exacts et explicites, mais ils ne
+corrigeaient rien.
+
+La feuille passe par ailleurs de `88dvh` à `92dvh` : une ligne de filtre de plus
+visible sans défilement, sur un panneau qu'on ouvre justement pour ne regarder
+que lui.
+
 ### `ecran.html`, mesure de l'appareil
 
 Accessible sans connexion sur `/ecran.html`, complémentaire de `diag.html`.
