@@ -756,9 +756,14 @@ ${me.name} — Fluxym`;
         <div class="fld"><label>Intérêt / usage Esker</label>
           <textarea id="d-interest" placeholder="Client Esker ? Quels modules ? Pourquoi est-il présent ?">${esc(r.interest||"")}</textarea></div>
         <div class="fld"><label>Notes</label><textarea id="d-notes">${esc(r.notes||"")}</textarea></div>
-        ${msgKind(r) ? `<div class="fld"><label>Message Whova prêt à envoyer (en anglais) · version ${esc(MSG_LABEL[msgKind(r)])}</label>
-          <div class="msg-box" id="d-msg">${esc(template(r))}</div>
-          <button class="mini" id="d-copy" style="margin:8px 0 0">Copier le message</button></div>`
+        ${msgKind(r) ? `<div class="fld"><label>Message Whova (en anglais) · ${r.message
+            ? "votre version, enregistrée le " + FX.fmtDate(r.message_at)
+            : "modèle " + esc(MSG_LABEL[msgKind(r)])}</label>
+          <textarea id="d-msg" style="max-height:38vh">${esc(r.message || template(r))}</textarea>
+          <button class="mini" id="d-copy" style="margin:8px 0 0">Copier le message</button>
+          ${r.message ? `<button class="mini" id="d-msg-reset" style="margin:8px 0 0">Revenir au modèle</button>` : ""}
+          <p class="prio-why">Modifiez librement : votre version est enregistrée avec la fiche et
+          remplace le modèle. Le bouton Enregistrer est en bas.</p></div>`
         : `<div class="fld"><label>Message Whova</label>
           <p class="prio-why">Collègue Fluxym : rien à envoyer.</p></div>`}
         <div class="d-meta">Fiche ${esc(r.id)} · page Whova ${esc(r.page_whova)}<br>
@@ -776,8 +781,16 @@ ${me.name} — Fluxym`;
 
     /* Le bloc message est absent pour un collegue Fluxym : pas de bouton. */
     const copyBtn = $("#d-copy");
-    if (copyBtn) copyBtn.onclick = () => navigator.clipboard.writeText($("#d-msg").textContent)
+    if (copyBtn) copyBtn.onclick = () => navigator.clipboard.writeText($("#d-msg").value)
       .then(() => toast("Message copié", "ok"));
+
+    /* Revenir au modele ne fait que reremplir le champ. C'est l'enregistrement
+       qui remet message a null, et il reste donc annulable en refermant. */
+    const resetBtn = $("#d-msg-reset");
+    if (resetBtn) resetBtn.onclick = () => {
+      $("#d-msg").value = template(r);
+      toast("Modèle restauré, pensez à enregistrer");
+    };
     /* Revenir a la suggestion : on ne fait pas confiance a la valeur affichee,
        on relit priority_auto, qui n'est jamais ecrasee par un humain. */
     const reset = $("#d-prio-reset");
@@ -794,6 +807,20 @@ ${me.name} — Fluxym`;
       const np = $("#d-priority").value || null;
       if (np !== r.priority) { p.priority = np; p.priority_manual = true; p.priority_by = me.name; }
       if (p.status !== "A contacter" && !r.contacted_at) p.contacted_at = new Date().toISOString();
+
+      /* Un texte identique au modele est stocke a null : la fiche repart ainsi
+         du modele vivant, et un changement de segment ne laisse pas un message
+         fige derriere lui. On n'ecrit la colonne que si elle change vraiment,
+         pour ne pas deplacer message_at sans raison. */
+      const ta = $("#d-msg");
+      if (ta) {
+        const txt = ta.value.trim();
+        const val = (!txt || txt === template(r).trim()) ? null : txt;
+        if (val !== (r.message || null)) {
+          p.message = val;
+          p.message_at = val ? new Date().toISOString() : null;
+        }
+      }
       if (await patch(r.id, p)) { toast("Fiche enregistrée", "ok"); closeDrawer(); }
       else btn.disabled = false;
     };
@@ -817,7 +844,8 @@ ${me.name} — Fluxym`;
   /* ---------------- Export ---------------- */
   $("#export-btn").onclick = () => {
     const cols = ["id","full_name","title","company","location","segment","job_function",
-                  "seniority","priority","owner","status","meeting_slot","interest","notes"];
+                  "seniority","priority","owner","status","meeting_slot","interest","notes",
+                  "message"];
     const csv = [cols.join(";")].concat(ROWS.filter(match).map(r =>
       cols.map(c => `"${String(r[c] ?? "").replace(/"/g,'""')}"`).join(";"))).join("\n");
     const a = document.createElement("a");

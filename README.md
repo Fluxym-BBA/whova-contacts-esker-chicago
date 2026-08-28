@@ -377,6 +377,30 @@ aujourd'hui.
 | Analyste ou presse | le point de vue de l'intégrateur sur le marché |
 | Collègue Fluxym | aucun message, le bloc disparaît de la fiche |
 
+### Le message est modifiable et conservé
+
+`attendees.message` (texte) et `attendees.message_at` stockent la version
+rédigée à la main. `null` signifie « rien de personnalisé », et la fiche
+affiche alors le modèle calculé. Trois décisions de conception :
+
+* **Un texte identique au modèle est stocké à `null`.** Sans cela, ouvrir une
+  fiche et enregistrer suffirait à figer le modèle du jour, et un changement
+  de segment laisserait derrière lui un message qui ne correspond plus.
+* **La colonne n'est écrite que si elle change**, pour ne pas déplacer
+  `message_at` à chaque enregistrement de fiche.
+* **Le modèle ne reprend jamais la main tout seul.** Comme pour la priorité,
+  ce qu'un humain a écrit ne s'écrase pas : il faut le bouton
+  *Revenir au modèle*, puis enregistrer.
+
+La colonne est exposée par `select("*")`, hérite de la policy `att_write`
+conditionnée à `is_fluxym()` comme le reste de la table, et part en dernière
+position de l'export CSV, où chaque champ est déjà mis entre guillemets et ses
+guillemets doublés : un texte multi-ligne ne casse pas le fichier.
+
+Ce que la colonne ne dit pas : **elle ne prouve pas l'envoi.** Whova n'expose
+rien, donc la base sait ce qui a été rédigé, pas ce qui a été envoyé. Seuls
+`status` et `contacted_at` portent cette information.
+
 La famille est **déduite du segment** (`MSG_KIND` dans `js/app.js`), jamais
 saisie. Le tag Whova `Speakers` ajoute une phrase sur la session du contact.
 Les messages sont en anglais, l'événement se tient à Rosemont ; l'interface
