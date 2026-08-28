@@ -227,22 +227,26 @@
   });
 
   /* ---------------- Fiche ---------------- */
+  /* Message redige en anglais : l'evenement se tient a Rosemont et les
+     participants sont americains pour la quasi-totalite. L'interface reste en
+     francais, c'est notre outil interne ; seul ce qui part vers le contact
+     change de langue. */
   function template(r) {
     const first = (r.first_name || r.full_name).split(" ")[0];
-    const angle = r.job_function === "AP / P2P" ? "le cycle achats et comptes fournisseurs"
-                : r.job_function === "AR / O2C / Credit" ? "le cycle O2C et le recouvrement"
-                : "vos processus finance";
-    return `Bonjour ${first},
+    const angle = r.job_function === "AP / P2P" ? "accounts payable and procure-to-pay"
+                : r.job_function === "AR / O2C / Credit" ? "order-to-cash, credit and collections"
+                : "your finance processes";
+    return `Hi ${first},
 
-Je suis ${me.name.split(" ")[0]} chez Fluxym, intégrateur et partenaire Esker. Nous tenons un stand pendant All Access.
+I'm ${me.name.split(" ")[0]} from Fluxym, an Esker integrator and partner. We have a booth at All Access.
 
-J'aimerais échanger quelques minutes avec vous : comment utilisez-vous Esker aujourd'hui chez ${r.company || "vous"}, et quels sont vos enjeux sur ${angle} ?
+I'd love to spend a few minutes with you: how are you using Esker today at ${r.company || "your company"}, and what are your priorities around ${angle}?
 
-Nous vous montrons concrètement comment nous menons nos projets, et nous répondons à vos questions.
+We'll walk you through how we actually run these projects, and answer any questions you have.
 
-Passez nous voir quand vous voulez, ou indiquez-moi un créneau qui vous arrange.
+Stop by the booth whenever suits you, or let me know a time that works for you.
 
-À très vite,
+Talk soon,
 ${me.name} — Fluxym`;
   }
 
@@ -289,7 +293,7 @@ ${me.name} — Fluxym`;
         <textarea id="d-interest" placeholder="Client Esker ? Quels modules ? Pourquoi est-il présent ?">${esc(r.interest||"")}</textarea></div>
       <div class="fld"><label>Notes</label><textarea id="d-notes">${esc(r.notes||"")}</textarea></div>
       <button class="d-save" id="d-save">Enregistrer</button>
-      <div class="fld" style="margin-top:22px"><label>Message Whova prêt à envoyer</label>
+      <div class="fld" style="margin-top:22px"><label>Message Whova prêt à envoyer (en anglais)</label>
         <div class="msg-box" id="d-msg">${esc(template(r))}</div>
         <button class="mini" id="d-copy">Copier le message</button></div>
       <div class="d-meta">Fiche ${esc(r.id)} · page Whova ${esc(r.page_whova)}<br>
