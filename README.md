@@ -162,6 +162,26 @@ configuration réellement lue est `js/config.js`.
 
 Rien à installer, aucune étape de build.
 
+### Versionner les appels, à chaque livraison
+
+Les pages appellent leurs fichiers avec une étiquette de version :
+
+```html
+<link rel="stylesheet" href="./css/app.css?v=20260828c">
+<script src="./js/app.js?v=20260828c"></script>
+```
+
+**Cette étiquette doit changer dès qu'un fichier de `css/` ou `js/` change**,
+dans les cinq pages à la fois. Sans elle, GitHub Pages annonce ses fichiers
+pour dix minutes et Safari iOS les garde souvent plus longtemps : on déploie
+un correctif, et une partie de l'équipe continue de voir l'ancienne version
+sans le savoir. C'est acceptable en préparation, ce serait très coûteux
+pendant l'événement, où personne n'ira vider un cache entre deux visiteurs.
+
+Convention : date du jour plus une lettre par livraison, `20260828c` étant la
+troisième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
+versionnés, ils portent déjà leur propre numéro de version.
+
 ---
 
 ## L'annuaire
