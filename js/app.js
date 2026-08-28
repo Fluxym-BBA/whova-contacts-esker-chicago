@@ -755,11 +755,11 @@ ${me.name} — Fluxym`;
           <input id="d-slot" value="${esc(r.meeting_slot||"")}" placeholder="ex : mardi 14h30"></div>
         <div class="fld"><label>Intérêt / usage Esker</label>
           <textarea id="d-interest" placeholder="Client Esker ? Quels modules ? Pourquoi est-il présent ?">${esc(r.interest||"")}</textarea></div>
-        <div class="fld"><label>Notes</label><textarea id="d-notes">${esc(r.notes||"")}</textarea></div>
+        <div class="fld"><label>Notes</label><textarea id="d-notes" style="min-height:300px">${esc(r.notes||"")}</textarea></div>
         ${msgKind(r) ? `<div class="fld"><label>Message Whova (en anglais) · ${r.message
             ? "votre version, enregistrée le " + FX.fmtDate(r.message_at)
             : "modèle " + esc(MSG_LABEL[msgKind(r)])}</label>
-          <textarea id="d-msg" style="max-height:38vh">${esc(r.message || template(r))}</textarea>
+          <textarea id="d-msg" style="min-height:300px">${esc(r.message || template(r))}</textarea>
           <button class="mini" id="d-copy" style="margin:8px 0 0">Copier le message</button>
           ${r.message ? `<button class="mini" id="d-msg-reset" style="margin:8px 0 0">Revenir au modèle</button>` : ""}
           <p class="prio-why">Modifiez librement : votre version est enregistrée avec la fiche et
