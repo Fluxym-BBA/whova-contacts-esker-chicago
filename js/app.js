@@ -87,7 +87,15 @@
       b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin");
     }
     const { data, error } = await FX.sb.from("attendees").select("*").order("last_name");
-    if (error) { if (manual) toast("Erreur de chargement : " + error.message, "bad"); return; }
+    if (error) {
+      /* Une panne de reseau n'est pas une erreur applicative : on garde a
+         l'ecran ce qu'on a, et on le dit franchement plutot que de laisser
+         croire que la liste est a jour. */
+      if (FX.looksOffline(error)) offline(true);
+      else if (manual) toast("Erreur de chargement : " + error.message, "bad");
+      return;
+    }
+    offline(false);
 
     const rows = data || [];
     /* Signature volontairement courte : identite, horodatage de derniere
@@ -99,6 +107,7 @@
 
     if (sig === SIG && !first) { if (manual) toast("Liste déjà à jour"); return; }
     SIG = sig;
+    keepRows(rows);
     buildFilters();
     if (busy()) { PENDING = true; return; }
     render();
@@ -203,26 +212,82 @@
     return true;
   }
 
+  /* ---------------- Navigation et bouton retour ----------------
+
+     Le probleme resolu ici est le plus visible de tous quand l'application est
+     installee sur un telephone : sans barre d'adresse, le geste retour est le
+     seul geste de sortie. Jusqu'ici il quittait l'application au lieu de
+     fermer la fiche ouverte, ce qui donnait immediatement la sensation d'un
+     site web deguise.
+
+     Le modele est volontairement grossier : deux niveaux, pas plus.
+       - l'onglet courant, qui vit dans l'historique et dans le fragment
+         d'URL, ce qui rend les quatre vues partageables et permet aux
+         raccourcis du manifeste de fonctionner ;
+       - un unique niveau "panneau ouvert", qui couvre indifferemment la fiche,
+         la feuille de filtres et sa sous-liste.
+
+     Pourquoi un seul niveau pour les trois panneaux : parce qu'empiler
+     feuille puis sous-liste puis fiche demanderait trois gestes retour pour
+     revenir a la liste. Sur un stand, avec une main, un geste vaut mieux que
+     trois. Le retour referme donc tout ce qui est ouvert d'un coup.
+     ------------------------------------------------------------------ */
+  const VIEWS = ["list", "mine", "team", "log"];
+  let PANEL_PUSHED = false;   /* une entree d'historique est-elle posee ? */
+
+  const anyPanel = () => sheet.open || subOpen() || !$("#drawer").hidden;
+
+  /* Appelee apres l'ouverture d'un panneau. */
+  function panelPushed() {
+    if (PANEL_PUSHED) return;
+    PANEL_PUSHED = true;
+    try { history.pushState({ fx: { view: VIEW, panel: 1 } }, ""); } catch (_) { PANEL_PUSHED = false; }
+  }
+  /* Appelee apres la fermeture d'un panneau, seulement si plus rien n'est
+     ouvert. `fromHist` vaut vrai quand c'est justement l'historique qui a
+     demande la fermeture : il ne faut alors surtout pas rappeler back(). */
+  function panelPopped(fromHist) {
+    if (!PANEL_PUSHED || anyPanel()) return;
+    PANEL_PUSHED = false;
+    if (!fromHist) { try { history.back(); } catch (_) {} }
+  }
+  /* Ferme tout, sans toucher a l'historique. */
+  function closeAllPanels() {
+    if (!$("#drawer").hidden) closeDrawer(true);
+    if (subOpen()) closeSub(true);
+    if (sheet.open) closeSheet(true);
+  }
+
+  window.addEventListener("popstate", e => {
+    const st = (e.state && e.state.fx) || { view: "list" };
+    /* Un etat sans panneau alors que des panneaux sont ouverts : on remonte. */
+    if (!st.panel && anyPanel()) { PANEL_PUSHED = false; closeAllPanels(); }
+    else if (st.panel) PANEL_PUSHED = true;
+    if (st.view && st.view !== VIEW) showView(st.view, true);
+  });
+
   /* ---------------- Feuille de filtres ----------------
      Sur ordinateur le panneau est visible en clair et ces fonctions ne font
      rien de visible : le bouton qui les declenche est masque. */
   const sheet = { open: false };
-  function openSheet() {
+  function openSheet(fromHist) {
     sheet.open = true;
     document.body.classList.add("sheet-open");
     $("#filters-btn").setAttribute("aria-expanded", "true");
+    if (!fromHist) panelPushed();
   }
-  function closeSheet() {
-    if (!$("#fsub").hidden) closeSub();   /* jamais un deuxieme niveau orphelin */
+  function closeSheet(fromHist) {
+    if (!$("#fsub").hidden) closeSub(true);   /* jamais un deuxieme niveau orphelin */
     sheet.open = false;
     document.body.classList.remove("sheet-open");
     $("#filters-btn").setAttribute("aria-expanded", "false");
     flush();
+    panelPopped(fromHist);
   }
   $("#filters-btn").onclick   = () => (sheet.open ? closeSheet() : openSheet());
-  $("#filters-close").onclick = closeSheet;
-  $("#filters-back").onclick  = closeSheet;
-  $("#filters-apply").onclick = closeSheet;
+  $("#filters-close").onclick = () => closeSheet();
+  $("#filters-back").onclick  = () => closeSheet();
+  $("#filters-apply").onclick = () => closeSheet();
 
   /* Glisser la poignee vers le bas ferme la feuille. Le geste est limite a la
      poignee : ailleurs, il doit rester du defilement, pas une fermeture
@@ -247,7 +312,7 @@
     grab.addEventListener("touchend", end);
     grab.addEventListener("touchcancel", end);
   }
-  wireGrab($("#filters-grab"), $("#filters"), closeSheet);
+  wireGrab($("#filters-grab"), $("#filters"), () => closeSheet());
 
   /* ---------------- Menu de filtres (telephone) ----------------
      Un <select> natif portant 182 societes est injouable au pouce : il faut
@@ -298,7 +363,7 @@
     }).join("") || '<div class="empty">Aucune valeur ne correspond.</div>';
   }
 
-  function openSub(k) {
+  function openSub(k, fromHist) {
     const d = FDEFS.find(x => x[0] === k); if (!d) return;
     SUBKEY = k;
     $("#fsub-title").textContent = d[2];
@@ -310,11 +375,13 @@
     $("#fsub-list").scrollTop = 0;
     $("#fsub").hidden = false;
     document.body.classList.add("sub-open");
+    if (!fromHist) panelPushed();
   }
-  function closeSub() {
+  function closeSub(fromHist) {
     $("#fsub").hidden = true;
     document.body.classList.remove("sub-open");
     SUBKEY = null;
+    panelPopped(fromHist);
   }
   const subOpen = () => !$("#fsub").hidden;
 
@@ -322,7 +389,7 @@
     const r = e.target.closest("[data-fkey]");
     if (r) openSub(r.dataset.fkey);
   };
-  $("#fsub-back").onclick = closeSub;
+  $("#fsub-back").onclick = () => closeSub();
   $("#fsub-q").oninput = e => paintSubList(e.target.value);
   $("#fsub-list").onclick = e => {
     const b = e.target.closest("[data-val]"); if (!b) return;
@@ -549,7 +616,8 @@
   }
 
   /* ---------------- Onglets ---------------- */
-  function showView(v) {
+  function showView(v, fromHist) {
+    const prev = VIEW;
     if (v !== VIEW) SCROLL[VIEW] = window.scrollY;
     VIEW = v;
     $$(".tab").forEach(x => {
@@ -558,9 +626,30 @@
       x.setAttribute("aria-selected", on ? "true" : "false");
     });
     $$(".view").forEach(s => s.hidden = true);
-    $("#view-" + v).hidden = false;
+    const el = $("#view-" + v);
+    el.hidden = false;
+
+    /* Glissement lateral entre onglets. Quatorze pixels, pas la largeur de
+       l'ecran : un glissement complet sur une liste de plusieurs centaines de
+       lignes coute un reflow visible et se bagarre avec la position de
+       defilement qu'on restaure juste apres. Quatorze pixels et un fondu
+       suffisent a donner la sensation d'un changement d'ecran. Le sens suit
+       l'ordre des onglets, comme sur une application a onglets. */
+    if (v !== prev) {
+      const back = VIEWS.indexOf(v) < VIEWS.indexOf(prev);
+      el.classList.remove("vin-fwd", "vin-back");
+      void el.offsetWidth;                       /* relance l'animation */
+      el.classList.add(back ? "vin-back" : "vin-fwd");
+    }
+
     if (v === "log") paintLog(); else paintView(v);
     window.scrollTo(0, SCROLL[v] || 0);
+
+    /* Le fragment sert deux choses : les raccourcis du manifeste et une URL
+       partageable sur ordinateur. Il est invisible en mode installe. */
+    if (!fromHist) {
+      try { history.pushState({ fx: { view: v } }, "", "#" + v); } catch (_) {}
+    }
   }
   $$(".tab").forEach(t => t.onclick = () => showView(t.dataset.view));
 
@@ -709,11 +798,12 @@ ${me.name} — Fluxym`;
      Enregistrer toujours visible en bas. Le pire cas a eviter est un bouton
      d'action qu'il faut aller chercher au defilement, ou qui passe sous la
      barre d'URL de Safari. */
-  function drawer(id) {
+  function drawer(id, fromHist) {
     const r = ROWS.find(x => x.id === id); if (!r) return;
     const d = $("#drawer");
     $("#drawer-back").hidden = false;
     d.hidden = false;
+    if (!fromHist) panelPushed();
     d.innerHTML = `
       <div class="d-top">
         <button class="x" aria-label="Fermer la fiche">&times;</button>
@@ -777,7 +867,7 @@ ${me.name} — Fluxym`;
     /* Glisser l'entete vers le bas ferme la fiche, comme dans les
        applications natives. Le geste est limite a l'entete : dans le corps,
        vers le bas, on defile. */
-    wireGrab(d.querySelector(".d-top"), d, closeDrawer);
+    wireGrab(d.querySelector(".d-top"), d, () => closeDrawer());
 
     /* Le bloc message est absent pour un collegue Fluxym : pas de bouton. */
     const copyBtn = $("#d-copy");
@@ -796,7 +886,7 @@ ${me.name} — Fluxym`;
     const reset = $("#d-prio-reset");
     if (reset) reset.onclick = async () => {
       if (await patch(r.id, { priority: r.priority_auto, priority_manual: false, priority_by: null })) {
-        toast("Priorité rendue à la formule", "ok"); drawer(id);
+        toast("Priorité rendue à la formule", "ok"); drawer(id, true);
       }
     };
     $("#d-save").onclick = async () => {
@@ -826,16 +916,21 @@ ${me.name} — Fluxym`;
     };
   }
 
-  function closeDrawer() {
+  function closeDrawer(fromHist) {
     const d = $("#drawer");
     if (d.hidden) return;
     d.classList.remove("open");
     d.style.transform = "";
     document.body.classList.remove("drawer-open");
     setTimeout(() => { d.hidden = true; $("#drawer-back").hidden = true; d.innerHTML = ""; flush(); }, 260);
+    /* L'entree d'historique est retiree tout de suite, sans attendre la fin de
+       l'animation : sinon deux gestes retour rapides en enlevent deux. */
+    panelPopped(fromHist);
   }
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
+    /* Echap ferme la couche la plus haute. Chaque fermeture retire elle-meme
+       son entree d'historique quand plus rien n'est ouvert. */
     if (subOpen()) closeSub();
     else if (!$("#drawer").hidden) closeDrawer();
     else if (sheet.open) closeSheet();
@@ -854,6 +949,134 @@ ${me.name} — Fluxym`;
     a.click();
   };
 
+  /* ==========================================================================
+     COPIE LOCALE DE L'ANNUAIRE, BANDEAU, SERVICE WORKER
+
+     Trois choses qui n'existent que pour un seul scenario : le wifi du centre
+     de congres de Rosemont, un mardi matin, avec quatre cents personnes qui
+     s'y connectent en meme temps.
+
+     Ce que la copie locale N'EST PAS : une base de donnees hors ligne. Aucune
+     ecriture n'est possible sans reseau, et c'est voulu. Deux personnes qui
+     s'attribueraient le meme contact chacune de son cote, hors ligne, puis se
+     synchroniseraient, produiraient exactement le probleme que cette
+     application est censee resoudre. La copie locale sert a LIRE : savoir en
+     cinq secondes si un participant est deja pris, et par qui.
+
+     Ce qu'elle contient : les 497 fiches, noms et societes compris, en clair
+     dans le stockage local du navigateur. C'est une donnee personnelle, mais
+     elle n'ajoute pas de risque nouveau : la session Supabase y est deja, donc
+     un telephone deverrouille donnait deja acces a l'annuaire. Elle est
+     effacee a la deconnexion, avec le reste des cles fx.* (voir js/api.js).
+     ========================================================================== */
+  const ROWS_K = "fx.rows.v1";
+  let CACHE_AT = 0;
+
+  function keepRows(rows) {
+    try { localStorage.setItem(ROWS_K, JSON.stringify({ at: Date.now(), rows })); CACHE_AT = Date.now(); }
+    catch (_) { /* quota plein : on continue sans copie locale */ }
+  }
+  function recallRows() {
+    try {
+      const k = JSON.parse(localStorage.getItem(ROWS_K) || "null");
+      return k && Array.isArray(k.rows) && k.rows.length ? k : null;
+    } catch (_) { return null; }
+  }
+
+  /* ---------------- Bandeau de service ----------------
+     Un seul bandeau, deux messages possibles. Une nouvelle version prime sur
+     l'etat du reseau : elle demande une action, l'autre est une information. */
+  const bar = $("#fx-bar"), barTxt = $("#fx-bar-txt"), barAct = $("#fx-bar-act");
+  const hasBar = !!(bar && barTxt && barAct);
+  let BAR = null;
+
+  /* Si index.html n'a pas ete deploye en meme temps que ce fichier, le bandeau
+     n'existe pas. Ce n'est pas une raison pour perdre l'annuaire : on se tait
+     et tout le reste continue de fonctionner. */
+  function setBar(kind, txt, actLabel, act) {
+    if (!hasBar) return;
+    if (BAR === "update" && kind !== "update") return;
+    BAR = kind; barTxt.textContent = txt;
+    barAct.hidden = !actLabel;
+    if (actLabel) { barAct.textContent = actLabel; barAct.onclick = act; }
+    bar.hidden = false;
+    bar.dataset.kind = kind;
+  }
+  function clearBar(kind) {
+    if (!hasBar || BAR !== kind) return;
+    BAR = null; bar.hidden = true; barAct.onclick = null;
+  }
+  const barX = $("#fx-bar-x");
+  if (barX) barX.onclick = () => { bar.hidden = true; };
+
+  const hhmm = t => new Date(t).toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+
+  function offline(on) {
+    if (!on) { clearBar("offline"); return; }
+    setBar("offline", CACHE_AT
+      ? "Hors connexion. Donnees locales de " + hhmm(CACHE_AT) + ", aucune modification possible."
+      : "Hors connexion. Aucune modification possible.");
+  }
+  window.addEventListener("offline", () => offline(true));
+  window.addEventListener("online",  () => { offline(false); load(); });
+
+  /* ---------------- Service worker ----------------
+     Il n'apporte qu'une chose : l'application s'ouvre sans attendre le reseau.
+     Il ne decide jamais seul de passer a une nouvelle version. */
+  if ("serviceWorker" in navigator) {
+    const offerUpdate = reg => setBar("update",
+      "Nouvelle version disponible.", "Recharger", () => {
+        if (reg.waiting) reg.waiting.postMessage("fx-skip-waiting");
+        else location.reload();
+      });
+
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(reg => {
+      if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg);
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing; if (!sw) return;
+        sw.addEventListener("statechange", () => {
+          /* `controller` non nul veut dire qu'une version tournait deja : sans
+             cela, il s'agit de la toute premiere installation et il n'y a rien
+             a proposer. */
+          if (sw.state === "installed" && navigator.serviceWorker.controller) offerUpdate(reg);
+        });
+      });
+    }).catch(() => { /* pas de mode hors connexion, l'application marche quand meme */ });
+
+    /* Un rechargement n'a de sens que si une version tournait deja. A la
+       toute premiere installation, `clients.claim()` fait passer la page sous
+       controle du service worker et declenche cet evenement : recharger a ce
+       moment-la infligerait un rechargement surprise des la premiere visite,
+       potentiellement en pleine saisie. On note donc l'etat de depart. */
+    const wasControlled = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!wasControlled || reloaded) return;
+      reloaded = true; location.reload();
+    });
+  }
+
+  /* ---------------- Demarrage ----------------
+     La copie locale s'affiche AVANT la reponse du reseau. C'est tout l'objet
+     de l'exercice : de l'annuaire a l'ecran en une fraction de seconde, puis
+     un remplacement silencieux quand les donnees fraiches arrivent. */
+  const kept = recallRows();
+  if (kept) {
+    CACHE_AT = kept.at;
+    ROWS = kept.rows;
+    buildFilters();
+    render();
+  }
+
   await load();
+
+  /* Etat initial de l'historique, et lecture du fragment : ouvrir directement
+     un onglet depuis un raccourci du manifeste, ou depuis un lien partage. */
+  const h = (location.hash || "").replace("#", "");
+  const v0 = VIEWS.includes(h) ? h : "list";
+  try { history.replaceState({ fx: { view: v0 } }, "", "#" + v0); } catch (_) {}
+  if (v0 !== "list") showView(v0, true);
+
+  if (!navigator.onLine) offline(true);
   startPoll();
 })();

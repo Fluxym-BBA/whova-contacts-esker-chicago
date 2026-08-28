@@ -704,10 +704,56 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
 }
 
 /* ==========================================================================
+   TRANSITION ENTRE ONGLETS
+
+   Quatorze pixels et un fondu, pas un glissement pleine largeur. Un
+   translate de 100% sur une vue qui contient plusieurs centaines de cartes
+   coute un reflow visible sur un telephone d'entree de gamme, et se bagarre
+   avec la position de defilement restauree juste apres le changement
+   d'onglet. Le sens suit l'ordre des onglets : vers la gauche quand on
+   revient, comme sur une application a onglets.
+
+   Le bloc prefers-reduced-motion plus haut neutralise deja ces animations
+   pour qui a demande moins de mouvement : rien a ajouter ici.
+   ========================================================================== */
+@keyframes fx-view-fwd { from { opacity:0; transform:translate3d(14px,0,0) }  to { opacity:1; transform:none } }
+@keyframes fx-view-back{ from { opacity:0; transform:translate3d(-14px,0,0) } to { opacity:1; transform:none } }
+.view.vin-fwd { animation:fx-view-fwd .19s cubic-bezier(.22,.7,.25,1) both }
+.view.vin-back{ animation:fx-view-back .19s cubic-bezier(.22,.7,.25,1) both }
+
+/* ==========================================================================
+   BANDEAU DE SERVICE
+
+   Deux messages seulement : hors connexion, et nouvelle version disponible.
+   Place en bas, juste au-dessus de la barre d'onglets, parce que sur un
+   telephone tenu d'une main c'est la seule zone qu'on lit et qu'on touche
+   sans se contorsionner. Il ne recouvre jamais la barre d'onglets : on doit
+   pouvoir continuer a naviguer avec le bandeau affiche.
+   ========================================================================== */
+.fxbar{position:fixed;left:8px;right:8px;bottom:calc(8px + var(--tabh) + var(--safe-b));z-index:140;
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;
+  background:#1e293b;color:#fff;font-size:13.5px;line-height:1.35;
+  box-shadow:0 12px 34px rgba(15,23,42,.32)}
+.fxbar[data-kind="update"]{background:var(--accent)}
+.fxbar>span{flex:1;min-width:0}
+.fxbar-act{background:#fff;color:var(--ink);border:0;border-radius:10px;padding:9px 13px;
+  font-weight:600;font-size:13px;min-height:var(--touch)}
+.fxbar-x{background:transparent;border:0;color:rgba(255,255,255,.72);font-size:21px;line-height:1;
+  width:34px;min-height:34px;padding:0}
+@media(min-width:860px){ .fxbar{left:auto;right:20px;bottom:20px;max-width:430px} }
+
+/* Message affiche a la place du voile de chargement quand il n'y a ni reseau
+   ni copie locale. Voir js/api.js : mieux vaut une explication qui reste a
+   l'ecran qu'un toast de neuf secondes devant une page vide. */
+.veil-msg{padding:0 28px;text-align:center;line-height:1.5;max-width:420px;margin:0 auto}
+.veil-btn{margin-top:16px;background:var(--accent);color:#fff;border:0;border-radius:10px;
+  padding:11px 18px;font-weight:600;font-size:14px;min-height:var(--touch)}
+
+/* ==========================================================================
    MARQUEUR DE VERSION
    Porte par la feuille de style elle-meme, volontairement : si ce libelle
    s'affiche, c'est que le CSS charge est bien celui-la. Une demi-heure a
    ete perdue le 28 aout a se demander si un deploiement etait passe.
    A incrementer a chaque livraison qui touche css/app.css.
    ========================================================================== */
-.nav-brand span::after{content:" \00b7 interface v5"}
+.nav-brand span::after{content:" \00b7 interface v6"}

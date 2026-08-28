@@ -19,6 +19,9 @@ GitHub Pages (ce repo, statique)     Supabase — fluxym-esker-allaccess-2026
 │ admin.html   js/admin.js  │        │ activity_log  traçabilité            │
 │ js/api.js    js/nav.js    │        │ RLS       is_fluxym() / is_owner()   │
 │ css/app.css               │        ├──────────────────────────────────────┤
+│ sw.js  manifest.webmanif. │        │                                      │
+│   coquille en cache,      │        │   Jamais mis en cache par sw.js :    │
+│   ouverture hors réseau   │        │   ni les tables, ni l'authentif.     │
 └───────────────────────────┘ ─────► │ Edge Function `admin-users`          │
                               POST   │   ← seul détenteur de service_role   │
                                      └──────────────────────────────────────┘
@@ -81,6 +84,17 @@ forgerait un appel direct reçoit un `403`.
   tableau de bord Supabase. Sans cela il pourrait se connecter sans rien
   voir, et l'erreur serait incompréhensible.
 
+**Ce qui est stocké sur l'appareil** (depuis le 28 août, voir « Hors
+connexion ») : la session Supabase, comme avant, plus une copie de l'annuaire
+et du profil sous les clés `fx.rows.v1` et `fx.session.v1`. Ces copies
+contiennent des noms, des fonctions et des sociétés en clair, donc des données
+personnelles, mais elles n'ajoutent pas de risque nouveau : la session vivait
+déjà là, et un téléphone déverrouillé donnait déjà accès à l'annuaire. Deux
+précautions : **toutes les clés `fx.*` sont effacées à la déconnexion**
+(`forgetLocal()` dans `js/api.js`, appelé aussi lorsqu'un compte perd son accès),
+et **rien de ce mécanisme n'accorde un droit** — la RLS reste seule juge, côté
+serveur, et aucune écriture n'aboutit sans réseau.
+
 ---
 
 ## Identifiants courts, et pourquoi
@@ -141,18 +155,25 @@ combien de contacts redeviendront libres.
 
 ```
 .
-├── .nojekyll                     ABSENT du dépôt au 28/08, à recréer (voir « Déploiement »)
+├── .nojekyll                     ABSENT du dépôt au 28/08 (voir « Déploiement »)
 ├── login.html                    js/login.js
 ├── index.html                    js/app.js      annuaire, attribution, suivi
 ├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
-├── manifest.webmanifest          ajout à l'écran d'accueil (voir « Sur téléphone »)
+├── manifest.webmanifest          installation sur l'écran d'accueil (voir « Sur téléphone »)
+├── sw.js                         service worker : coquille en cache, ouverture hors réseau
 ├── css/app.css
 ├── js/
 │   ├── config.js                 URL + clé anon
 │   ├── api.js                    client, garde d'authentification, appels admin
 │   └── nav.js                    navigation partagée
+├── assets/
+│   ├── favicon.ico               onglet de navigateur
+│   ├── icon-192.png              Android, écran d'accueil
+│   ├── icon-512.png              Android, écran de démarrage
+│   ├── icon-maskable-512.png     Android, icône rognée par le système
+│   └── apple-touch-icon-180.png  iOS, qui ignore le manifeste
 ├── supabase/
 │   ├── functions/admin-users/index.ts
 │   └── migrations/*.sql
@@ -180,7 +201,7 @@ Rien à installer, aucune étape de build.
 
 ### Savoir quelle version est réellement affichée
 
-Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v5`. Ce
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v6`. Ce
 libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
 que la feuille de style chargée est bien la dernière. **Ce numéro doit être
 incrémenté à chaque livraison qui touche `css/app.css`.**
@@ -262,8 +283,8 @@ par aucune page.
 Les pages appellent leurs fichiers avec une étiquette de version :
 
 ```html
-<link rel="stylesheet" href="./css/app.css?v=20260828e">
-<script src="./js/app.js?v=20260828e"></script>
+<link rel="stylesheet" href="./css/app.css?v=20260828f">
+<script src="./js/app.js?v=20260828f"></script>
 ```
 
 **Cette étiquette doit changer dès qu'un fichier de `css/` ou `js/` change**,
@@ -273,9 +294,19 @@ un correctif, et une partie de l'équipe continue de voir l'ancienne version
 sans le savoir. C'est acceptable en préparation, ce serait très coûteux
 pendant l'événement, où personne n'ira vider un cache entre deux visiteurs.
 
-Convention : date du jour plus une lettre par livraison, `20260828e` étant la
-cinquième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
+Convention : date du jour plus une lettre par livraison, `20260828f` étant la
+sixième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
 versionnés, ils portent déjà leur propre numéro de version.
+
+**Depuis l'ajout de `sw.js`, cette étiquette existe à deux endroits et les deux
+doivent bouger ensemble** : le `?v=` des pages, et la constante `VERSION` en
+haut de `sw.js`. Le service worker met la coquille en cache sous les URL
+exactes qu'il trouve dans les pages ; si les deux valeurs divergent, il met en
+cache des fichiers que personne ne demande, et sert au navigateur les anciens.
+Une livraison qui oublie `VERSION` ne changera donc rien sur les téléphones de
+l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
+mardi matin sur un stand. En cas de doute : le marqueur `interface v6` de
+l'en-tête dit quelle feuille de style est réellement chargée.
 
 ---
 
@@ -497,30 +528,108 @@ Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
   comprimé dans 36% de la largeur, puisque c'est l'information que l'on vient
   chercher en cinq secondes.
 
-**Ajout à l'écran d'accueil.** `manifest.webmanifest` et les balises Apple
-permettent de lancer l'application en plein écran, sans barre d'URL.
-Deux limites à connaître :
+### Installée sur l'écran d'accueil
 
-- **aucun fonctionnement hors ligne.** Il n'y a pas de *service worker*, et
-  c'est délibéré : sur un outil de répartition partagé, un cache mal maîtrisé
-  afficherait des attributions périmées, exactement ce que l'application
-  existe pour éviter. Sans réseau, l'application ne se charge pas.
-- **l'icône n'est pas définitive.** Le manifeste ne référence que
-  `assets/favicon.ico`. Pour une vraie icône, il faut ajouter
-  `assets/icon-192.png`, `assets/icon-512.png` et `assets/apple-touch-icon.png`
-  (180×180), puis les déclarer ; iOS ignore le manifeste pour l'icône et lit
-  uniquement `apple-touch-icon`.
+`manifest.webmanifest` lance l'application en plein écran, sans barre d'URL.
+Les icônes sont déclarées en 192 et 512, plus une version *maskable* pour
+Android, qui rogne les icônes selon la forme du lanceur, et un
+`apple-touch-icon` de 180 pixels dans le `<head>` d'`index.html`, parce
+qu'**iOS ignore purement et simplement le manifeste pour l'icône**. Sans cette
+dernière balise, l'icône posée sur l'écran d'accueil d'un iPhone est une
+vignette floue de la page.
+
+L'écran de démarrage utilise `background_color` (`#f5f7fb`, le fond clair de
+l'application) et non le bleu nuit de la barre : un flash sombre suivi d'une
+interface claire se remarque plus qu'on ne l'imagine. `orientation` est fixé
+à `portrait` : sur un stand, l'application se tient d'une main.
+
+### Le geste retour, et pourquoi il compte plus que le reste
+
+Installée, l'application n'a plus de barre d'adresse : **le geste retour
+devient le seul geste de sortie**. Jusqu'au 28 août il quittait l'application
+au lieu de fermer la fiche ouverte, ce qui suffisait à trahir un site web.
+
+`js/app.js` inscrit donc deux choses dans l'historique du navigateur :
+l'onglet courant, qui vit aussi dans le fragment d'URL (`#mine`), et un
+**unique** niveau « panneau ouvert », commun à la fiche, à la feuille de
+filtres et à sa sous-liste.
+
+Un seul niveau pour trois panneaux, volontairement : empiler feuille, puis
+sous-liste, puis fiche demanderait trois gestes retour pour revenir à la
+liste. Un retour referme tout ce qui est ouvert, d'un coup. Le comportement
+natif est conservé là où il doit l'être : depuis la liste, sans rien d'ouvert,
+le retour quitte bien l'application.
+
+Le fragment d'URL a un effet de bord utile : les vues sont partageables par
+lien depuis un ordinateur, et les raccourcis du manifeste (appui long sur
+l'icône) ouvrent directement *Mon portefeuille*.
+
+### Hors connexion, et ce que cela n'autorise pas
+
+Le README affirmait jusqu'au 28 août qu'il n'y aurait **pas** de *service
+worker*, au motif qu'un cache mal maîtrisé afficherait des attributions
+périmées. Le risque était juste, la conclusion trop large : elle laissait
+l'application dépendre entièrement du wifi d'un centre de congrès, un mardi
+matin, avec quatre cents personnes connectées en même temps. Sans réseau,
+l'annuaire ne s'ouvrait pas du tout.
+
+`sw.js` répond au risque au lieu de l'éviter, par trois choix explicites.
+
+1. **La stratégie n'est pas « cache d'abord » mais « réseau d'abord, avec une
+   limite de patience »** de 1200 ms. Si le réseau répond, sa réponse gagne
+   toujours. S'il tarde, la copie locale s'affiche et la version fraîche est
+   récupérée en arrière-plan. Le confort ne se paie jamais en fraîcheur.
+2. **Les données Supabase ne sont jamais mises en cache par `sw.js`.** Ni les
+   tables, ni l'authentification, ni l'Edge Function : ces requêtes ne sont
+   même pas interceptées.
+3. **La reprise de version n'est jamais automatique.** Aucun `skipWaiting()` à
+   l'installation : un service worker qui prend la main tout seul recharge la
+   page, et un rechargement au mauvais moment fait perdre une note qu'on
+   était en train de taper devant quelqu'un. Un bandeau prévient, l'utilisateur
+   décide.
+
+**La copie de travail de l'annuaire** est gérée séparément, par `js/app.js`,
+dans le stockage local (`fx.rows.v1`). Elle s'affiche avant même la réponse du
+réseau, puis est remplacée silencieusement. Ce qu'elle **n'est pas** : une base
+hors ligne. Aucune écriture n'est possible sans réseau, et c'est voulu. Deux
+personnes qui s'attribueraient le même contact chacune de son côté, hors
+ligne, puis se synchroniseraient, produiraient exactement le problème que
+cette application existe pour résoudre. La copie sert à **lire** : savoir en
+cinq secondes si un participant est déjà pris, et par qui.
+
+Un bandeau en bas de l'écran, juste au-dessus de la barre d'onglets, dit
+laquelle des deux situations s'applique : « Hors connexion, données locales de
+10h42, aucune modification possible », ou « Nouvelle version disponible » avec
+un bouton *Recharger*.
+
+**Conséquence sur la garde d'authentification** (`js/api.js`) : la lecture de
+`team` au démarrage échouait sans réseau, et cet échec était traité comme un
+refus d'accès, donc une déconnexion. Plus de réseau, plus d'annuaire, au
+moment précis où l'on en a besoin. Les deux cas sont désormais distingués : un
+refus reste un refus et déconnecte ; une panne de réseau, avec une session
+valide et un profil déjà connu, laisse entrer en lecture. **Cela n'accorde
+aucun droit** : la RLS est inchangée et toute écriture continue de passer par
+Supabase, donc échoue hors ligne.
+
+À la première ouverture sur un appareil, sans réseau et sans copie locale,
+l'application affiche un message explicite avec un bouton *Réessayer*, plutôt
+qu'une page vide.
 
 ---
 
 ## Segmentation
 
-**420 fiches** au 28 août 2026 : les **419 participants** de l'annuaire Whova
+**497 fiches** au 28 août 2026 au soir : les **496 participants** relevés dans l'annuaire Whova
 à cette date, plus une fiche saisie à la main pour Lucas De LA VILLARDIERE
 (`FX-LDLV`), qui n'est pas encore inscrit. Le volume bouge : 418 à l'import,
-419 après l'enrichissement de la page 1, et Whova affichait 425 inscrits le
-27 août. L'écart entre l'annuaire en ligne et la base est une information à
-relever, pas un détail à lisser.
+419 après l'enrichissement de la page 1, 425 affichés par Whova le 27 août,
+464 après le relevé des pages 13 à 25, puis 497 après celui des pages 1 à 12,
+le 28 août au soir. L'écart entre l'annuaire en ligne et la base est une
+information à relever, pas un détail à lisser : Whova annonçait 493 inscrits
+au même moment, dont deux fiches pour la même personne (Cassandra et Cassie
+Cambridge, fusionnées vers `P262`), deux cartes pour Phil Binkow et deux pour
+Sreeni Dhannawada, tandis que Marie Pierre Balanger, présente en base, n'est
+pas inscrite sur Whova et que Dustin Collins (`P281`) n'y figure plus.
 
 L'identifiant `FX-LDLV` sort volontairement de la série `P…` : quand Lucas
 s'inscrira sur Whova, une seconde fiche apparaîtra à côté de celle-ci, et le
@@ -528,11 +637,17 @@ doublon doit se voir.
 
 | Segment | Nb | Description |
 |---|---:|---|
-| `Client / Prospect` | 295 | la cible commerciale |
-| `Esker (hote)` | 56 | équipe Esker, speakers, organisateurs — **visibles**, ce sont aussi des cibles |
-| `Ecosysteme (exposant/sponsor)` | 52 | autres exposants, partenaires, éditeurs |
-| `Analyste / Presse` | 9 | Gartner, IDC, Walker Sands, The Hackett Group… |
+| `Client / Prospect` | 301 | la cible commerciale |
+| `Esker (hote)` | 121 | équipe Esker, speakers, organisateurs — **visibles**, ce sont aussi des cibles |
+| `Ecosysteme (exposant/sponsor)` | 55 | autres exposants, partenaires, éditeurs |
+| `Analyste / Presse` | 12 | Gartner, IDC, Walker Sands, Acclaim Media, The Hackett Group… |
 | `Fluxym (nous)` | 8 | nos collègues, masqués par défaut |
+
+Esker représente désormais **une fiche sur quatre**. Les 121 salariés Esker
+sont plafonnés en priorité B et la grande majorité tombe en C : la file C est
+donc largement composée de personnes avec qui aucune affaire ne se qualifiera.
+C'est assumé, l'annuaire sert aussi à mettre un nom sur un visage dans un
+couloir, mais il faut le savoir avant de vouloir « répartir tout le monde ».
 
 Répartition des cibles par fonction : Finance / Treasury 66, AP / P2P 59,
 AR / O2C / Credit 57, IT / ERP / Data 38, Sales / Marketing / Partner 20,
@@ -548,7 +663,7 @@ Ce qu'il faut retenir ici :
 
 * La formule ne connaît que trois choses, toutes venant de Whova : société,
   tags, intitulé de poste. **Aucune donnée commerciale.** Elle ne sait pas qui
-  est déjà client, ni où il y a une affaire en cours. Elle dégrossit 420
+  est déjà client, ni où il y a une affaire en cours. Elle dégrossit 497
   lignes, elle ne décide pas.
 * Un client ou prospect qui envoie **4 personnes ou plus** gagne un cran de
   priorité. Un compte qui se déplace en groupe a un projet ; c'est un signal

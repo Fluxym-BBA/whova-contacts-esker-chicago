@@ -10,10 +10,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stand Esker">
 <title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="manifest" href="./manifest.webmanifest?v=20260828e">
-<link rel="icon" href="./assets/favicon.ico">
+<link rel="manifest" href="./manifest.webmanifest?v=20260828f">
+<link rel="icon" href="./assets/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="./assets/icon-192.png" sizes="192x192">
+<!-- iOS ignore purement et simplement le manifeste : sans la balise qui suit,
+     l'icone posee sur l'ecran d'accueil est une vignette floue de la page. -->
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon-180.png" sizes="180x180">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/app.css?v=20260828e">
+<link rel="stylesheet" href="./css/app.css?v=20260828f">
 </head>
 <body class="app">
 <div class="veil">Chargement de l'annuaire…</div>
@@ -178,10 +182,22 @@
 <div class="modal-back" id="drawer-back" hidden></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Fiche participant" hidden></aside>
 
+<!-- ==========================================================================
+     Bandeau de service. Deux messages possibles, jamais les deux ensemble :
+     "hors connexion" et "nouvelle version disponible". Il est place en bas,
+     au-dessus de la barre d'onglets : sur un telephone tenu d'une main, le
+     haut de l'ecran ne se lit pas d'un coup d'oeil et ne se touche pas.
+     ========================================================================== -->
+<div id="fx-bar" class="fxbar" role="status" aria-live="polite" hidden>
+  <span id="fx-bar-txt"></span>
+  <button type="button" id="fx-bar-act" class="fxbar-act" hidden></button>
+  <button type="button" id="fx-bar-x" class="fxbar-x" aria-label="Masquer ce message">&times;</button>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260828e"></script>
-<script src="./js/api.js?v=20260828e"></script>
-<script src="./js/nav.js?v=20260828e"></script>
-<script src="./js/app.js?v=20260828e"></script>
+<script src="./js/config.js?v=20260828f"></script>
+<script src="./js/api.js?v=20260828f"></script>
+<script src="./js/nav.js?v=20260828f"></script>
+<script src="./js/app.js?v=20260828f"></script>
 </body>
 </html>
