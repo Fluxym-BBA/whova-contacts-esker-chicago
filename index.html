@@ -5,59 +5,152 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b1b34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stand Esker">
 <title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="icon" href="./assets/favicon.ico" sizes="any">
-<link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./assets/favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./css/app.css">
 </head>
-<body>
+<body class="app">
 <div class="veil">Chargement de l'annuaire…</div>
 <nav id="main-nav"></nav>
 
-<section class="kpis wrap" id="kpis"></section>
-
-<div class="tabs wrap">
-  <button class="tab on" data-view="list">Annuaire</button>
-  <button class="tab" data-view="mine">Mon portefeuille <span class="pill" id="mine-count">0</span></button>
-  <button class="tab" data-view="team">Répartition équipe</button>
-  <button class="tab" data-view="log">Journal</button>
-  <button class="ghost" id="refresh-btn" title="Rafraîchir">&#8635;</button>
+<!-- ==========================================================================
+     Barre de recherche collante. Sur telephone c'est le seul element fixe en
+     plus de la navigation : trouver quelqu'un doit toujours etre a une frappe,
+     sans avoir a remonter la page.
+     ========================================================================== -->
+<div class="sbar">
+  <div class="wrap sbar-in">
+    <div class="sfield">
+      <svg class="sicon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16 16"/></svg>
+      <input type="search" id="q" placeholder="Nom, société, poste…" aria-label="Rechercher un participant"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <button class="sclear" id="q-clear" type="button" aria-label="Effacer la recherche" hidden>&times;</button>
+    </div>
+    <button class="fbtn" id="filters-btn" type="button" aria-expanded="false" aria-controls="filters">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+      <span class="fbtn-l">Filtres</span><i class="fcount" id="filters-count" hidden>0</i>
+    </button>
+    <button class="iconbtn" id="refresh-btn" type="button" aria-label="Actualiser la liste" title="Actualiser">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 3.5V9h-5.5"/></svg>
+    </button>
+  </div>
 </div>
 
-<main class="wrap">
-  <section class="view" id="view-list">
-    <div class="toolbar">
-      <input type="search" id="q" placeholder="Rechercher un nom, une société, un poste…">
-      <select id="f-priority"><option value="">Priorité : toutes</option><option value="A">A — prioritaire</option><option value="B">B</option><option value="C">C</option></select>
-      <select id="f-segment"><option value="">Segment : tous</option></select>
-      <select id="f-function"><option value="">Fonction : toutes</option></select>
-      <select id="f-seniority"><option value="">Séniorité : toute</option></select>
-      <select id="f-owner"><option value="">Attribution : toutes</option><option value="__none__">Non attribué</option></select>
-      <select id="f-status"><option value="">Statut : tous</option></select>
-      <select id="f-company"><option value="">Société : toutes</option></select>
-      <label class="chk"><input type="checkbox" id="f-hide-fluxym" checked> Masquer Fluxym</label>
-      <label class="chk"><input type="checkbox" id="f-hide-esker"> Masquer Esker</label>
-      <button class="ghost" id="reset-btn">Réinitialiser</button>
-      <button class="ghost" id="export-btn">Export CSV</button>
-      <span class="count" id="count"></span>
+<!-- Filtres actifs, rappeles en pastilles supprimables : sur telephone la
+     feuille est refermee, il faut voir d'un coup d'oeil ce qui reste applique. -->
+<div class="wrap chipbar" id="chipbar" hidden></div>
+
+<!-- ==========================================================================
+     FILTRES
+     Un seul balisage pour deux presentations : panneau en clair sur ordinateur,
+     feuille remontante sur telephone. Aucun champ n'est duplique, donc aucun
+     risque de voir deux valeurs divergentes pour le meme filtre.
+     ========================================================================== -->
+<div class="sheet-back" id="filters-back"></div>
+<section class="filters" id="filters" aria-label="Filtres de l'annuaire">
+  <div class="sheet-grab" id="filters-grab" aria-hidden="true"><i></i></div>
+  <header class="sheet-head">
+    <h2>Filtres</h2>
+    <button class="sheet-x" id="filters-close" type="button" aria-label="Fermer les filtres">&times;</button>
+  </header>
+
+  <div class="filters-body">
+    <label class="fl"><span>Priorité</span>
+      <select id="f-priority">
+        <option value="">Toutes</option>
+        <option value="A">A — à voir absolument</option>
+        <option value="B">B — à voir si possible</option>
+        <option value="C">C — opportuniste</option>
+      </select></label>
+    <label class="fl"><span>Attribution</span>
+      <select id="f-owner">
+        <option value="">Tous</option>
+        <option value="__none__">Non attribué</option>
+      </select></label>
+    <label class="fl"><span>Statut</span>
+      <select id="f-status"><option value="">Tous</option></select></label>
+    <label class="fl"><span>Fonction</span>
+      <select id="f-function"><option value="">Toutes</option></select></label>
+    <label class="fl"><span>Séniorité</span>
+      <select id="f-seniority"><option value="">Toutes</option></select></label>
+    <label class="fl"><span>Segment</span>
+      <select id="f-segment"><option value="">Tous</option></select></label>
+    <label class="fl fl-wide"><span>Société</span>
+      <select id="f-company"><option value="">Toutes</option></select></label>
+
+    <div class="fl-switches">
+      <label class="chk"><input type="checkbox" id="f-hide-fluxym" checked> <span>Masquer Fluxym</span></label>
+      <label class="chk"><input type="checkbox" id="f-hide-esker"> <span>Masquer Esker</span></label>
     </div>
-    <nav class="alpha-index" id="alpha-index" aria-label="Aller a une lettre"></nav>
+
+    <div class="fl-actions">
+      <button class="ghost" id="reset-btn" type="button">Réinitialiser</button>
+      <button class="ghost" id="export-btn" type="button">Export CSV</button>
+    </div>
+  </div>
+
+  <footer class="sheet-foot">
+    <button class="sheet-cta" id="filters-apply" type="button">Voir les résultats</button>
+  </footer>
+</section>
+
+<!-- Tableau de bord : deplie sur ordinateur, replie sur telephone. Six chiffres
+     avant la premiere fiche, c'est un ecran perdu quand on cherche un nom. -->
+<section class="wrap dash" id="dash">
+  <button class="dash-toggle" id="dash-toggle" type="button" aria-expanded="false" aria-controls="kpis">
+    <span class="dash-sum" id="dash-sum">Tableau de bord</span>
+    <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<!-- Onglets : en haut sur ordinateur, barre basse dans la zone du pouce sur
+     telephone. Meme balisage, deux mises en forme. -->
+<div class="wrap tabs-wrap">
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Vues de l'annuaire">
+    <button class="tab on" data-view="list" role="tab" aria-selected="true">
+      <svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span class="tl">Annuaire</span></button>
+    <button class="tab" data-view="mine" role="tab" aria-selected="false">
+      <svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tl">Portefeuille</span><i class="pill" id="mine-count">0</i></button>
+    <button class="tab" data-view="team" role="tab" aria-selected="false">
+      <svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="8" r="3"/><path d="M3 20a4 4 0 0 1 4-4M21 20a4 4 0 0 0-4-4"/></svg>
+      <span class="tl">Équipe</span></button>
+    <button class="tab" data-view="log" role="tab" aria-selected="false">
+      <svg class="ti" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="tl">Journal</span></button>
+  </nav>
+</div>
+
+<main class="wrap main">
+  <section class="view" id="view-list" role="tabpanel">
+    <div class="listbar">
+      <span class="count" id="count"></span>
+      <span class="listbar-note">classés par nom de famille</span>
+    </div>
+    <nav class="alpha-index" id="alpha-index" aria-label="Aller à une lettre"></nav>
     <div class="grid" id="grid"></div>
     <div class="empty" id="empty" hidden>Aucun participant ne correspond à ces filtres.</div>
   </section>
 
-  <section class="view" id="view-mine" hidden>
+  <section class="view" id="view-mine" role="tabpanel" hidden>
     <div class="grid" id="grid-mine"></div>
-    <div class="empty" id="empty-mine" hidden>Votre portefeuille est vide. Dans l'annuaire, cliquez sur « Je prends ».</div>
+    <div class="empty" id="empty-mine" hidden>Votre portefeuille est vide. Dans l'annuaire, touchez « Je prends ».</div>
   </section>
 
-  <section class="view" id="view-team" hidden><div id="team-board"></div></section>
-  <section class="view" id="view-log" hidden><div id="log-list"></div></section>
+  <section class="view" id="view-team" role="tabpanel" hidden><div id="team-board"></div></section>
+  <section class="view" id="view-log" role="tabpanel" hidden><div id="log-list"></div></section>
 </main>
 
 <div class="modal-back" id="drawer-back" hidden></div>
-<aside class="drawer" id="drawer" hidden></aside>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Fiche participant" hidden></aside>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./js/config.js"></script>

@@ -131,6 +131,7 @@ combien de contacts redeviendront libres.
 ├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
+├── manifest.webmanifest          ajout à l'écran d'accueil (voir « Sur téléphone »)
 ├── css/app.css
 ├── js/
 │   ├── config.js                 URL + clé anon
@@ -144,6 +145,12 @@ combien de contacts redeviendront libres.
 
 Le dossier `supabase/` est versionné pour référence : le schéma et la
 fonction sont **déjà déployés**. Le pousser ne redéploie rien.
+
+Trois fichiers présents dans le dépôt ne sont **référencés par aucune page** :
+`assets/app.js`, `assets/styles.css` et le `config.js` de la racine. Ce sont
+des reliquats d'une version antérieure. Ils ne gênent rien mais peuvent
+tromper : la feuille de style réellement servie est `css/app.css`, et la
+configuration réellement lue est `js/config.js`.
 
 ---
 
@@ -176,6 +183,10 @@ un piège. L'initiale est calculée sur le nom de famille, accents et guillemets
 retirés ; ce qui ne commence pas par une lettre atterrit dans un groupe `#`
 placé en fin de liste. Le même regroupement s'applique à *Mon portefeuille*.
 
+La clé de tri retire la même ponctuation initiale que l'initiale elle-même.
+Sans cela, un `O'Brien` ou un `'t Hart` triait sur son apostrophe, donc avant
+les A, et son groupe apparaissait hors séquence alphabétique.
+
 **Esker et Fluxym se filtrent séparément.** Deux cases distinctes, parce que
 les deux populations n'ont rien à voir : *Masquer Fluxym* est cochée par
 défaut (nos propres collègues n'ont rien à faire dans l'annuaire), *Masquer
@@ -195,20 +206,87 @@ La fiche détaillée permet de noter un créneau, l'usage Esker du contact, des
 notes libres, et de copier un **message Whova pré-rédigé** personnalisé au
 contact comme à l'expéditeur.
 
-Rafraîchissement automatique toutes les 20 secondes.
+**Rafraîchissement automatique toutes les 20 secondes**, mais sobre : la
+réponse est comparée à une signature (`id`, `updated_at`, `owner`, `status`,
+`priority`) et la liste n'est repeinte que si quelque chose a bougé. Le cycle
+s'arrête quand la page passe en arrière-plan et reprend, avec un rechargement
+immédiat, au retour au premier plan. Une mise à jour qui arrive pendant qu'une
+feuille de filtres ou une fiche est ouverte est mise en attente et appliquée à
+la fermeture : repeindre sous les doigts de quelqu'un qui saisit une note est
+le meilleur moyen de perdre cette note.
 
 **Renommer un membre est sans danger** : `attendees.owner` référence
 `team.name` en `on update cascade`, les contacts déjà attribués suivent.
 
 ---
 
+## Sur téléphone
+
+L'application est pensée pour être utilisée **debout sur le stand, d'une seule
+main, entre deux conversations**. Le test de référence : vérifier en cinq
+secondes si un participant est déjà pris et par qui. Tout le reste passe après.
+
+Un seul balisage, deux présentations, point de bascule à **900px** (`css/app.css`).
+Il n'existe pas de version mobile séparée : dupliquer les champs de filtre,
+c'est prendre le risque que deux valeurs divergent pour le même filtre.
+
+| | Ordinateur (> 900px) | Téléphone (≤ 900px) |
+|---|---|---|
+| Recherche | barre collante sous la navigation | idem, plein largeur |
+| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, refermable au glissé, avec « Voir les N résultats » |
+| Filtres actifs | visibles dans le panneau | rappelés en pastilles supprimables sous la recherche |
+| Vues | onglets en haut | barre basse dans la zone du pouce, avec le compteur du portefeuille |
+| Tableau de bord | six indicateurs dépliés | replié, résumé en une ligne |
+| Fiches | grille de cartes | une colonne, format dense |
+| Fiche détaillée | panneau latéral | feuille plein écran, poignée, glissé vers le bas pour fermer |
+| Liens de pages | dans la barre de navigation | dans le menu de la barre de navigation |
+
+Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
+
+- **Champs à 16px sur téléphone** (`--fs-field`). En dessous, Safari iOS zoome
+  de force à chaque frappe et la page déborde. C'était le défaut le plus
+  agaçant de la version précédente.
+- **Hauteurs des barres collantes en variables** (`--navh`, `--sbarh`,
+  `--stick`). Les ancres A-Z s'en servent pour leur `scroll-margin-top` :
+  avec une valeur recopiée à la main, et une navigation qui changeait de
+  hauteur selon le repli des liens, l'intertitre atterrissait sous l'entête.
+  C'est aussi la raison pour laquelle la barre de navigation garde une hauteur
+  fixe sur téléphone.
+- **`env(safe-area-inset-*)` sur tout ce qui est fixe**, en haut comme en bas.
+  La page déclare `viewport-fit=cover` : sans ces marges, l'iPhone superpose
+  sa barre d'accueil au bouton d'action de la fiche.
+- **`100dvh`, jamais `100vh`**, pour les feuilles et panneaux. Avec `100vh`,
+  le bouton *Enregistrer* passait sous la barre d'URL de Safari.
+- **Cibles tactiles à 44px minimum** (`--touch`), 48 à 50px pour les actions
+  principales. *Je prends* faisait 30px de haut.
+
+**Ajout à l'écran d'accueil.** `manifest.webmanifest` et les balises Apple
+permettent de lancer l'application en plein écran, sans barre d'URL.
+Deux limites à connaître :
+
+- **aucun fonctionnement hors ligne.** Il n'y a pas de *service worker*, et
+  c'est délibéré : sur un outil de répartition partagé, un cache mal maîtrisé
+  afficherait des attributions périmées, exactement ce que l'application
+  existe pour éviter. Sans réseau, l'application ne se charge pas.
+- **l'icône n'est pas définitive.** Le manifeste ne référence que
+  `assets/favicon.ico`. Pour une vraie icône, il faut ajouter
+  `assets/icon-192.png`, `assets/icon-512.png` et `assets/apple-touch-icon.png`
+  (180×180), puis les déclarer ; iOS ignore le manifeste pour l'icône et lit
+  uniquement `apple-touch-icon`.
+
+---
+
 ## Segmentation
 
-**418 participants**, soit l'intégralité de l'annuaire Whova.
+**419 participants** au 28 août 2026, soit l'intégralité de l'annuaire Whova
+à cette date. Le volume bouge : 418 à l'import, 419 après l'enrichissement de
+la page 1, et Whova affichait 425 inscrits le 27 août. L'écart entre
+l'annuaire en ligne et la base est une information à relever, pas un détail à
+lisser.
 
 | Segment | Nb | Description |
 |---|---:|---|
-| `Client / Prospect` | 294 | la cible commerciale |
+| `Client / Prospect` | 295 | la cible commerciale |
 | `Esker (hote)` | 56 | équipe Esker, speakers, organisateurs — **visibles**, ce sont aussi des cibles |
 | `Ecosysteme (exposant/sponsor)` | 52 | autres exposants, partenaires, éditeurs |
 | `Analyste / Presse` | 9 | Gartner, IDC, Walker Sands, The Hackett Group… |
@@ -228,7 +306,7 @@ Ce qu'il faut retenir ici :
 
 * La formule ne connaît que trois choses, toutes venant de Whova : société,
   tags, intitulé de poste. **Aucune donnée commerciale.** Elle ne sait pas qui
-  est déjà client, ni où il y a une affaire en cours. Elle dégrossit 418
+  est déjà client, ni où il y a une affaire en cours. Elle dégrossit 419
   lignes, elle ne décide pas.
 * Un client ou prospect qui envoie **4 personnes ou plus** gagne un cran de
   priorité. Un compte qui se déplace en groupe a un projet ; c'est un signal
