@@ -213,6 +213,7 @@
     $("#filters-btn").setAttribute("aria-expanded", "true");
   }
   function closeSheet() {
+    if (!$("#fsub").hidden) closeSub();   /* jamais un deuxieme niveau orphelin */
     sheet.open = false;
     document.body.classList.remove("sheet-open");
     $("#filters-btn").setAttribute("aria-expanded", "false");
@@ -247,6 +248,142 @@
     grab.addEventListener("touchcancel", end);
   }
   wireGrab($("#filters-grab"), $("#filters"), closeSheet);
+
+  /* ---------------- Menu de filtres (telephone) ----------------
+     Un <select> natif portant 182 societes est injouable au pouce : il faut
+     viser dans une roue, sans recherche possible. On garde les <select> comme
+     source de verite (ils portent les options et la valeur, et servent
+     l'affichage sur ordinateur) et on les double d'un menu a deux niveaux :
+     la liste des filtres, puis la liste des valeurs en plein ecran. */
+  let SUBKEY = null;
+
+  function paintFmenu() {
+    $("#fmenu").innerHTML = FDEFS.map(([k, sel, label]) => {
+      const el  = $(sel);
+      const opt = el.selectedOptions[0];
+      const val = F[k] && opt ? opt.textContent.trim().split(" — ")[0]
+                              : el.options[0].textContent.trim();
+      return `<button class="fmrow ${F[k] ? "set" : ""}" type="button" data-fkey="${k}">
+        <span class="fmlab">${label}</span><span class="fmval">${esc(val)}</span>
+        <svg class="fmchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </button>`;
+    }).join("");
+  }
+
+  /* Nombre de fiches par valeur : choisir « Société » a l'aveugle sur 182
+     lignes fait perdre plus de temps que de lire la liste. Le compte porte
+     sur la base entiere, pas sur le filtrage courant, pour rester stable
+     pendant qu'on navigue dans le menu. */
+  function subCounts(k) {
+    const m = new Map();
+    ROWS.forEach(r => {
+      const v = k === "owner" ? (r.owner || "__none__") : r[k];
+      if (v) m.set(v, (m.get(v) || 0) + 1);
+    });
+    return m;
+  }
+
+  function paintSubList(q) {
+    const d = FDEFS.find(x => x[0] === SUBKEY); if (!d) return;
+    const el = $(d[1]), counts = subCounts(SUBKEY);
+    const needle = (q || "").trim().toLowerCase();
+    const items = [...el.options].filter(o => !needle || o.textContent.toLowerCase().includes(needle));
+    $("#fsub-list").innerHTML = items.map(o => {
+      const n = counts.get(o.value);
+      return `<button class="fsopt ${o.value === el.value ? "on" : ""}" type="button" data-val="${esc(o.value)}">
+        <span>${esc(o.textContent.trim())}</span>
+        ${n ? `<em>${n}</em>` : ""}
+        ${o.value === el.value ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>' : ""}
+      </button>`;
+    }).join("") || '<div class="empty">Aucune valeur ne correspond.</div>';
+  }
+
+  function openSub(k) {
+    const d = FDEFS.find(x => x[0] === k); if (!d) return;
+    SUBKEY = k;
+    $("#fsub-title").textContent = d[2];
+    /* Champ de recherche seulement quand la liste est longue : sur six
+       statuts il ne sert a rien et vole une ligne. */
+    $("#fsub-search").hidden = $(d[1]).options.length <= 12;
+    $("#fsub-q").value = "";
+    paintSubList("");
+    $("#fsub-list").scrollTop = 0;
+    $("#fsub").hidden = false;
+    document.body.classList.add("sub-open");
+  }
+  function closeSub() {
+    $("#fsub").hidden = true;
+    document.body.classList.remove("sub-open");
+    SUBKEY = null;
+  }
+  const subOpen = () => !$("#fsub").hidden;
+
+  $("#fmenu").onclick = e => {
+    const r = e.target.closest("[data-fkey]");
+    if (r) openSub(r.dataset.fkey);
+  };
+  $("#fsub-back").onclick = closeSub;
+  $("#fsub-q").oninput = e => paintSubList(e.target.value);
+  $("#fsub-list").onclick = e => {
+    const b = e.target.closest("[data-val]"); if (!b) return;
+    const d = FDEFS.find(x => x[0] === SUBKEY); if (!d) return;
+    $(d[1]).value = b.dataset.val;
+    F[SUBKEY] = b.dataset.val;
+    closeSub();          /* choix fait, on remonte : un aller-retour, pas deux */
+    render();
+  };
+
+  /* ---------------- Curseur alphabetique lateral ----------------
+     Colle au bord droit, disponible pendant tout le defilement. Le doigt
+     glisse, la liste suit, une bulle affiche la lettre visee. Le saut se
+     cale sous les barres collantes en mesurant leur position reelle, plutot
+     qu'en recopiant une hauteur qui finirait par etre fausse. */
+  function paintScrub(letters) {
+    const sc = $("#scrub");
+    /* Sous cinq lettres, un curseur etale sur toute la hauteur de l'ecran
+       est trompeur : autant ne rien afficher. */
+    sc.hidden = letters.length < 5;
+    sc.innerHTML = letters.map(l => `<b data-l="${l}">${l}</b>`).join("");
+  }
+
+  function wireScrub() {
+    const sc = $("#scrub"), bub = $("#scrub-bubble");
+    let raf = null, lastY = 0, lastL = null, hide = null;
+
+    const apply = () => {
+      raf = null;
+      const items = [...sc.children]; if (!items.length) return;
+      const r = sc.getBoundingClientRect();
+      const ratio = Math.min(1, Math.max(0, (lastY - r.top) / r.height));
+      const l = items[Math.min(items.length - 1, Math.floor(ratio * items.length))].dataset.l;
+      bub.textContent = l;
+      bub.hidden = false;
+      bub.style.top = Math.min(window.innerHeight - 70, Math.max(70, lastY)) + "px";
+      if (l === lastL) return;
+      lastL = l;
+      const target = document.getElementById("g-" + (l === "#" ? "num" : l));
+      if (!target) return;
+      const stick = document.querySelector(".sbar").getBoundingClientRect().bottom;
+      window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - stick - 8);
+    };
+    const move = y => {
+      lastY = y;
+      clearTimeout(hide);
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    const end = () => {
+      lastL = null;
+      hide = setTimeout(() => { bub.hidden = true; }, 450);
+    };
+
+    sc.addEventListener("touchstart", e => move(e.touches[0].clientY), { passive:true });
+    sc.addEventListener("touchmove",  e => move(e.touches[0].clientY), { passive:true });
+    sc.addEventListener("touchend", end);
+    sc.addEventListener("touchcancel", end);
+    /* Souris : utile quand la fenetre d'un ordinateur est etroite. */
+    sc.addEventListener("click", e => { move(e.clientY); end(); });
+  }
+  wireScrub();
 
   /* ---------------- Rendu d'une carte ---------------- */
   function card(r) {
@@ -298,10 +435,14 @@
     $("#empty").hidden = LIST.length > 0;
     /* L'index ne propose que les lettres reellement presentes apres filtrage :
        une lettre cliquable qui ne mene nulle part est un piege. */
-    $("#alpha-index").innerHTML = ALPHABET.concat(present.has("#") ? ["#"] : [])
+    const letters = ALPHABET.concat(present.has("#") ? ["#"] : []);
+    $("#alpha-index").innerHTML = letters
       .map(l => present.has(l)
         ? `<a href="#g-${l === "#" ? "num" : l}" data-jump="${l}">${l}</a>`
         : `<span>${l}</span>`).join("");
+    /* Le curseur lateral ne montre que les lettres atteignables : viser une
+       lettre absente et ne rien voir bouger fait croire a une panne. */
+    paintScrub(letters.filter(l => present.has(l)));
     DIRTY.list = false;
   }
   function paintMine() {
@@ -399,7 +540,7 @@
       ? `Voir les ${LIST.length} résultats` : "Aucun résultat";
     $("#mine-count").textContent = mineRows().length;
 
-    paintDash(); paintChips(); paintView(VIEW);
+    paintDash(); paintChips(); paintFmenu(); paintView(VIEW);
   }
   function paintView(v) {
     if (v === "list" && DIRTY.list) paintList();
@@ -495,7 +636,6 @@ ${me.name} — Fluxym`;
     $("#drawer-back").hidden = false;
     d.hidden = false;
     d.innerHTML = `
-      <div class="d-grab" id="d-grab" aria-hidden="true"><i></i></div>
       <div class="d-top">
         <button class="x" aria-label="Fermer la fiche">&times;</button>
         <h2>${esc(r.full_name)}</h2>
@@ -548,7 +688,10 @@ ${me.name} — Fluxym`;
     void d.offsetHeight;                 /* force le calcul avant l'animation */
     d.classList.add("open");
     document.body.classList.add("drawer-open");
-    wireGrab($("#d-grab"), d, closeDrawer);
+    /* Glisser l'entete vers le bas ferme la fiche, comme dans les
+       applications natives. Le geste est limite a l'entete : dans le corps,
+       vers le bas, on defile. */
+    wireGrab(d.querySelector(".d-top"), d, closeDrawer);
 
     $("#d-copy").onclick = () => navigator.clipboard.writeText($("#d-msg").textContent)
       .then(() => toast("Message copié", "ok"));
@@ -583,7 +726,9 @@ ${me.name} — Fluxym`;
   }
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
-    if (!$("#drawer").hidden) closeDrawer(); else if (sheet.open) closeSheet();
+    if (subOpen()) closeSub();
+    else if (!$("#drawer").hidden) closeDrawer();
+    else if (sheet.open) closeSheet();
   });
 
   /* ---------------- Export ---------------- */

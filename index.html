@@ -61,6 +61,11 @@
   </header>
 
   <div class="filters-body">
+    <!-- Telephone : lignes de menu, un niveau par filtre. Les <select> plus bas
+         restent la source de verite (valeurs et options) mais sont masques ;
+         aucun etat n'est duplique. Ordinateur : l'inverse, ce menu est masque. -->
+    <div class="fmenu" id="fmenu"></div>
+
     <label class="fl"><span>Priorité</span>
       <select id="f-priority">
         <option value="">Toutes</option>
@@ -98,6 +103,21 @@
   <footer class="sheet-foot">
     <button class="sheet-cta" id="filters-apply" type="button">Voir les résultats</button>
   </footer>
+
+  <!-- Deuxieme niveau : la liste des valeurs, en plein ecran. Un choix parmi
+       182 societes dans un menu deroulant natif est inutilisable au pouce. -->
+  <div class="fsub" id="fsub" hidden>
+    <header class="fsub-head">
+      <button class="fsub-back" id="fsub-back" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Retour</button>
+      <h3 id="fsub-title"></h3>
+    </header>
+    <div class="fsub-search" id="fsub-search" hidden>
+      <input type="search" id="fsub-q" placeholder="Rechercher…" autocomplete="off"
+             autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher une valeur">
+    </div>
+    <div class="fsub-list" id="fsub-list"></div>
+  </div>
 </section>
 
 <!-- Tableau de bord : deplie sur ordinateur, replie sur telephone. Six chiffres
@@ -138,6 +158,12 @@
     <nav class="alpha-index" id="alpha-index" aria-label="Aller à une lettre"></nav>
     <div class="grid" id="grid"></div>
     <div class="empty" id="empty" hidden>Aucun participant ne correspond à ces filtres.</div>
+
+    <!-- Curseur alphabetique : colle au bord droit pendant tout le defilement.
+         L'index horizontal du haut obligeait a remonter la liste entiere pour
+         changer de lettre. Il reste sur ordinateur, ou la souris va vite. -->
+    <div class="scrub" id="scrub" role="navigation" aria-label="Curseur alphabétique"></div>
+    <div class="scrub-bubble" id="scrub-bubble" aria-hidden="true" hidden></div>
   </section>
 
   <section class="view" id="view-mine" role="tabpanel" hidden>

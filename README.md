@@ -233,13 +233,32 @@ c'est prendre le risque que deux valeurs divergent pour le même filtre.
 | | Ordinateur (> 900px) | Téléphone (≤ 900px) |
 |---|---|---|
 | Recherche | barre collante sous la navigation | idem, plein largeur |
-| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, refermable au glissé, avec « Voir les N résultats » |
+| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, puis **menu à deux niveaux** : liste des filtres, puis liste des valeurs en plein écran |
+| Choix d'une valeur | menu déroulant natif | liste de lignes de 52px, nombre de fiches par valeur, recherche interne au-delà de 12 options |
 | Filtres actifs | visibles dans le panneau | rappelés en pastilles supprimables sous la recherche |
 | Vues | onglets en haut | barre basse dans la zone du pouce, avec le compteur du portefeuille |
 | Tableau de bord | six indicateurs dépliés | replié, résumé en une ligne |
-| Fiches | grille de cartes | une colonne, format dense |
-| Fiche détaillée | panneau latéral | feuille plein écran, poignée, glissé vers le bas pour fermer |
+| Index alphabétique | barre A-Z horizontale au-dessus de la liste | **curseur vertical collé au bord droit**, disponible pendant tout le défilement |
+| Fiches | grille de cartes | une colonne, texte agrandi |
+| Fiche détaillée | panneau latéral de 470px | **plein écran**, croix explicite ou glissé de l'entête vers le bas |
 | Liens de pages | dans la barre de navigation | dans le menu de la barre de navigation |
+
+Trois de ces choix viennent d'un essai sur téléphone, pas d'un principe :
+
+- **le curseur alphabétique latéral.** L'index horizontal obligeait à remonter
+  la liste entière pour changer de lettre. Le curseur reste sous le pouce
+  pendant tout le défilement : le doigt glisse, la liste suit, une bulle
+  affiche la lettre visée. Il n'affiche que les lettres atteignables après
+  filtrage, et disparaît en dessous de cinq lettres, où il serait trompeur.
+  Le saut se cale sous les barres collantes en mesurant leur position réelle.
+- **le menu de filtres à deux niveaux.** Un menu déroulant natif portant 182
+  sociétés se vise dans une roue, sans recherche. Les `<select>` restent la
+  source de vérité, y compris pour l'affichage sur ordinateur ; le menu les
+  double sans dupliquer l'état, donc deux valeurs ne peuvent pas diverger pour
+  le même filtre.
+- **la fiche en plein écran.** À 93dvh elle donnait une demi-page, ni panneau
+  ni page. Elle occupe maintenant tout l'écran : on l'ouvre, on saisit, on la
+  ferme, et on retrouve la liste à l'endroit où on l'avait laissée.
 
 Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
 
@@ -257,8 +276,11 @@ Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
   sa barre d'accueil au bouton d'action de la fiche.
 - **`100dvh`, jamais `100vh`**, pour les feuilles et panneaux. Avec `100vh`,
   le bouton *Enregistrer* passait sous la barre d'URL de Safari.
-- **Cibles tactiles à 44px minimum** (`--touch`), 48 à 50px pour les actions
-  principales. *Je prends* faisait 30px de haut.
+- **Cibles tactiles à 44px minimum** (`--touch`), 46 à 52px pour les actions
+  principales et les lignes de menu. *Je prends* faisait 30px de haut.
+- **Tailles de texte revues à la hausse sur téléphone** : nom 16,5px, société
+  14px, intitulé de poste 13px, champs de la fiche 16px. Une interface dense
+  se lit assis à un bureau, pas debout entre deux conversations.
 
 **Ajout à l'écran d'accueil.** `manifest.webmanifest` et les balises Apple
 permettent de lancer l'application en plein écran, sans barre d'URL.
