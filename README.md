@@ -161,6 +161,8 @@ combien de contacts redeviendront libres.
 ├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
+├── diag.html                     diagnostic : ce que la feuille de style applique
+├── ecran.html                    diagnostic : ce que l'appareil déclare
 ├── manifest.webmanifest          installation sur l'écran d'accueil (voir « Sur téléphone »)
 ├── sw.js                         service worker : coquille en cache, ouverture hors réseau
 ├── css/app.css
@@ -232,6 +234,37 @@ navigation, la barre d'onglets basse, la fiche en plein écran intégral, les
 feuilles qui montent du bas, le menu de filtres à deux niveaux et le repli du
 tableau de bord.
 
+#### Le déclencheur n'est plus la seule largeur
+
+Depuis le 28 août au soir, les deux paliers téléphone s'écrivent :
+
+```css
+@media (max-width:900px),(max-width:1280px) and (pointer:coarse) and (hover:none)
+```
+
+Deux Galaxy S26 ne se comportaient pas de la même façon le même jour : l'un
+recevait l'interface téléphone, l'autre l'interface ordinateur. La largeur en
+pixels CSS d'un téléphone haut de gamme n'est pas une constante. Elle dépend du
+réglage de densité d'Android, du zoom d'écran de Samsung, et elle double en
+paysage. Un palier fixé sur la seule largeur finit donc par se tromper.
+
+La seconde condition attrape ces cas par ce qui ne mentira pas sur un
+téléphone : `pointer:coarse` (le pointeur principal est imprécis, c'est un
+doigt) et `hover:none` (aucune notion de survol). Un ordinateur portable à
+écran tactile n'est pas concerné, son pointeur principal reste la souris.
+
+**Ce que cela ne couvre pas.** Si le navigateur reçoit l'ordre d'afficher le
+site en mode « Site pour ordinateur », il annonce alors `pointer:fine` et
+`hover:hover` et se fait passer pour un poste de travail : aucune règle CSS ne
+peut le rattraper, c'est le principe même de ce réglage. Dans Chrome Android :
+bouton des trois points, décocher **Site pour ordinateur**. Le réglage est
+mémorisé par site, ce qui rend le symptôme durable et déroutant.
+
+Les deux paliers doivent porter **exactement la même condition**. Si l'un dit
+900px et l'autre la liste complète, la moitié de l'interface téléphone
+s'applique et l'autre non, ce qui produit un affichage incohérent bien plus
+difficile à diagnostiquer qu'une absence franche.
+
 La fiche détaillée n'est plus un panneau collé au bord droit. Un panneau de
 470px sur un écran large tassait le texte dans un couloir et forçait l'oeil à
 quitter le centre. C'est maintenant une fenêtre centrée de 780px au plus, sur
@@ -263,6 +296,28 @@ apparent, à savoir « rien n'a change » :
 Elle appelle le CSS avec `?diag=...`, une URL utilisee nulle part ailleurs,
 pour qu'aucune entree de cache existante ne puisse la servir. Elle ne charge ni
 `js/config.js` ni `js/api.js` et ne touche a aucune donnee.
+
+### `ecran.html`, mesure de l'appareil
+
+Accessible sans connexion sur `/ecran.html`, complémentaire de `diag.html`.
+Là où `diag.html` mesure **ce que la feuille de style applique**, celle-ci
+mesure **ce que l'appareil déclare** : largeur du viewport face à largeur de
+l'écran, densité de pixels, `pointer`, `hover`, `display-mode`, points de
+contact tactile, identité du navigateur, service worker actif, taille réelle du
+CSS reçu.
+
+Elle sert à trancher une question que `diag.html` ne peut pas trancher : quand
+un téléphone reçoit l'interface ordinateur, est-ce parce que son écran est
+réellement large, ou parce que le navigateur a reçu l'ordre de mentir ? Le
+signal est net : un écran de 412px qui rend la page sur 980px est en mode
+« Site pour ordinateur ». La page affiche alors le verdict et le geste
+correctif, en clair.
+
+Elle recharge le CSS avec `?t=` horodaté et `cache:no-store`, pour qu'aucune
+entrée de cache ne puisse la tromper. Elle ne charge ni `js/config.js` ni
+`js/api.js`, ne touche à aucune donnée, et n'est volontairement pas dans la
+coquille du service worker : une page de diagnostic qui serait servie depuis un
+cache serait une contradiction.
 
 ### `.nojekyll`
 
