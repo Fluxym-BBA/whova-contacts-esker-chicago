@@ -114,14 +114,21 @@ recolle le domaine que s'il manque.
    empêche un poste laissé déverrouillé de servir à enfermer son
    propriétaire dehors.
 
-**L'adresse d'un compte ne se modifie pas depuis l'application.** `actionUpdate`
-touche le nom, le rôle, la couleur, le droit propriétaire et l'activation, jamais
-l'e-mail : l'identifiant de connexion est figé à la création. Pour en changer, on
-crée un second compte avec la bonne adresse et un nom affiché **identique au
-caractère près** : `handle_new_user` tombe sur le conflit de nom, rattache la
-ligne `team` existante et le portefeuille suit. Supprimer l'ancien compte
-d'abord libérerait tous ses contacts, `attendees_owner_fkey` étant en
-`on delete set null`.
+**L'adresse de connexion est figée à la création.** `admin-users` sait
+renommer un membre, changer sa couleur, l'activer ou le désactiver, mais son
+action `update` ne touche **jamais** l'e-mail : c'est l'identifiant du compte
+`auth`. Créer un compte sous une adresse approximative se paie donc au prix
+d'un identifiant approximatif à vie, ou d'une correction directe en base sur
+`auth.users` et `auth.identities`. Le 28 août, deux comptes ont été créés
+avant que l'adresse exacte soit connue : `lucas@fluxym.com` faute de connaître
+le nom de famille, et `mbalanger@fluxym.com` au lieu de `mpbalanger`. Le
+second a été corrigé en base, ce qui n'était sans risque que parce que le
+compte ne s'était jamais connecté. **Vérifier l'adresse avant de créer le
+compte coûte cinq secondes.**
+
+Ne jamais supprimer un compte pour le recréer sous la bonne adresse :
+`attendees_owner_fkey` est en `on delete set null`, la suppression libérerait
+tout son portefeuille en silence.
 
 **Désactiver plutôt que supprimer.** Décocher *Compte actif* coupe l'accès
 en conservant le portefeuille. La suppression, elle, libère tous les
@@ -134,12 +141,13 @@ combien de contacts redeviendront libres.
 
 ```
 .
-├── .nojekyll                     sans lui, Pages ignore les dossiers servis
+├── .nojekyll                     ABSENT du dépôt au 28/08, à recréer (voir « Déploiement »)
 ├── login.html                    js/login.js
 ├── index.html                    js/app.js      annuaire, attribution, suivi
 ├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
+├── manifest.webmanifest          ajout à l'écran d'accueil (voir « Sur téléphone »)
 ├── css/app.css
 ├── js/
 │   ├── config.js                 URL + clé anon
@@ -154,6 +162,12 @@ combien de contacts redeviendront libres.
 Le dossier `supabase/` est versionné pour référence : le schéma et la
 fonction sont **déjà déployés**. Le pousser ne redéploie rien.
 
+Trois fichiers présents dans le dépôt ne sont **référencés par aucune page** :
+`assets/app.js`, `assets/styles.css` et le `config.js` de la racine. Ce sont
+des reliquats d'une version antérieure. Ils ne gênent rien mais peuvent
+tromper : la feuille de style réellement servie est `css/app.css`, et la
+configuration réellement lue est `js/config.js`.
+
 ---
 
 ## Déploiement
@@ -163,6 +177,105 @@ fonction sont **déjà déployés**. Le pousser ne redéploie rien.
 3. Ouvrir `login.html` ou la racine.
 
 Rien à installer, aucune étape de build.
+
+### Savoir quelle version est réellement affichée
+
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v5`. Ce
+libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
+que la feuille de style chargée est bien la dernière. **Ce numéro doit être
+incrémenté à chaque livraison qui touche `css/app.css`.**
+
+Le 28 août, une demi-heure a été perdue à se demander si un déploiement était
+passé : les fichiers étaient corrects dans le dépôt, l'interface semblait
+inchangée, et rien à l'écran ne permettait de trancher. Un marqueur visible
+coûte une ligne de CSS et supprime la question.
+
+### Une seule présentation, quelle que soit la largeur
+
+Jusqu'au 28 août, la bande de lettres latérale, la fiche agrandie et l'échelle
+typographique relevée étaient enfermées dans le palier `max-width:900px`. Sur un
+écran d'ordinateur, **ces éléments n'existaient pas**. Deux conséquences, l'une
+gênante et l'autre coûteuse. Impossible de vérifier depuis un poste de travail
+ce que l'équipe verrait sur le stand. Et surtout, un travail livré pouvait
+sembler absent alors qu'il était en ligne : trois livraisons ont été jugées
+« sans effet » le 28 août pour cette seule raison.
+
+Ce qui s'applique désormais **à toutes les largeurs** : l'échelle typographique
+complète, les cibles à 50px, la ligne d'action de la carte sur deux rangées, la
+bande de lettres latérale, la fiche détaillée en fenêtre centrée, les champs de
+saisie à 16px.
+
+Ce qui reste **propre au téléphone**, parce que lié au petit écran et non à une
+préférence : la colonne unique, le menu burger à la place des liens de
+navigation, la barre d'onglets basse, la fiche en plein écran intégral, les
+feuilles qui montent du bas, le menu de filtres à deux niveaux et le repli du
+tableau de bord.
+
+La fiche détaillée n'est plus un panneau collé au bord droit. Un panneau de
+470px sur un écran large tassait le texte dans un couloir et forçait l'oeil à
+quitter le centre. C'est maintenant une fenêtre centrée de 780px au plus, sur
+fond assombri, qui repasse en plein écran sous 900px.
+
+Point d'attention pour la suite : les règles communes sont regroupées dans un
+bloc unique, **avant** les deux paliers téléphone. Une déclaration ajoutée dans
+un palier téléphone écrase donc son équivalent commun. C'est exactement le
+piège qui a fait survivre les valeurs de la première passe et annulé les
+suivantes sur téléphone.
+
+### `diag.html`, page de diagnostic d'affichage
+
+Accessible sans connexion sur `/diag.html`. Elle charge la vraie feuille de
+style et **mesure ce que le navigateur applique reellement** : largeur utile de
+la page, mise en page retenue, taille du nom sur une fiche, hauteur du bouton
+d'action. Elle affiche aussi une fiche de demonstration avec le vrai CSS et la
+bande de lettres, ce qui permet de juger l'ergonomie sans se connecter.
+
+Son interet est de trancher entre trois causes qui produisent le meme symptome
+apparent, à savoir « rien n'a change » :
+
+1. la fenetre depasse 900px, donc la mise en page ordinateur est normale ;
+2. le navigateur applique une feuille anterieure, malgre un fichier correct en
+   ligne, ce qui pointe un cache, un proxy reseau ou une application ajoutee a
+   l'ecran d'accueil ;
+3. la feuille n'est pas chargee du tout.
+
+Elle appelle le CSS avec `?diag=...`, une URL utilisee nulle part ailleurs,
+pour qu'aucune entree de cache existante ne puisse la servir. Elle ne charge ni
+`js/config.js` ni `js/api.js` et ne touche a aucune donnee.
+
+### `.nojekyll`
+
+**Ce fichier est absent du dépôt au 28 août 2026**, alors qu'une version
+antérieure de ce README le déclarait indispensable. Dans les faits `css/` et
+`js/` sont bien servis, Jekyll n'excluant que les dossiers commençant par un
+souligné. Le recréer reste préférable, par sécurité et parce que le jour où un
+dossier prendra un nom commençant par `_`, le diagnostic sera pénible. Il se
+crée depuis GitHub : *Add file → Create new file*, nommer `.nojekyll`, laisser
+le contenu vide, valider.
+
+Résidus à supprimer quand l'occasion se présente : `COMMIT_MESSAGE.txt` et
+`config.js` à la racine, `assets/app.js` et `assets/styles.css`, plus référencés
+par aucune page.
+
+### Versionner les appels, à chaque livraison
+
+Les pages appellent leurs fichiers avec une étiquette de version :
+
+```html
+<link rel="stylesheet" href="./css/app.css?v=20260828e">
+<script src="./js/app.js?v=20260828e"></script>
+```
+
+**Cette étiquette doit changer dès qu'un fichier de `css/` ou `js/` change**,
+dans les cinq pages à la fois. Sans elle, GitHub Pages annonce ses fichiers
+pour dix minutes et Safari iOS les garde souvent plus longtemps : on déploie
+un correctif, et une partie de l'équipe continue de voir l'ancienne version
+sans le savoir. C'est acceptable en préparation, ce serait très coûteux
+pendant l'événement, où personne n'ira vider un cache entre deux visiteurs.
+
+Convention : date du jour plus une lettre par livraison, `20260828e` étant la
+cinquième du 28 août. Le CDN `supabase-js` et les polices Google ne sont pas
+versionnés, ils portent déjà leur propre numéro de version.
 
 ---
 
@@ -185,6 +298,10 @@ un piège. L'initiale est calculée sur le nom de famille, accents et guillemets
 retirés ; ce qui ne commence pas par une lettre atterrit dans un groupe `#`
 placé en fin de liste. Le même regroupement s'applique à *Mon portefeuille*.
 
+La clé de tri retire la même ponctuation initiale que l'initiale elle-même.
+Sans cela, un `O'Brien` ou un `'t Hart` triait sur son apostrophe, donc avant
+les A, et son groupe apparaissait hors séquence alphabétique.
+
 **Esker et Fluxym se filtrent séparément.** Deux cases distinctes, parce que
 les deux populations n'ont rien à voir : *Masquer Fluxym* est cochée par
 défaut (nos propres collègues n'ont rien à faire dans l'annuaire), *Masquer
@@ -201,31 +318,189 @@ concerné. Toute reprise est journalisée.
 → `Rencontré`, ou `Sans suite`.
 
 La fiche détaillée permet de noter un créneau, l'usage Esker du contact, des
-notes libres, et de copier un **message Whova pré-rédigé**, personnalisé au
+notes libres, et de copier un **message Whova pré-rédigé** personnalisé au
 contact comme à l'expéditeur.
 
-Ce message existe en **quatre variantes**, choisies d'après le segment : client
-ou prospect (angle métier selon la fonction, version courte et créneau borné
-pour un dirigeant), équipe Esker (on ne demande pas à un salarié d'Esker comment
-il utilise Esker), exposant ou partenaire (entre pairs, sans pitch), analyste ou
-presse (le point de vue de l'intégrateur). Un collègue Fluxym n'a pas de message
-du tout, le bloc disparaît. Une phrase sur la session est ajoutée quand le
-contact porte le tag Whova `Speakers`. Tout est dans `js/app.js`, fonction
-`template()`, et la doctrine est expliquée page **Méthode**.
-
-Rafraîchissement automatique toutes les 20 secondes.
+**Rafraîchissement automatique toutes les 20 secondes**, mais sobre : la
+réponse est comparée à une signature (`id`, `updated_at`, `owner`, `status`,
+`priority`) et la liste n'est repeinte que si quelque chose a bougé. Le cycle
+s'arrête quand la page passe en arrière-plan et reprend, avec un rechargement
+immédiat, au retour au premier plan. Une mise à jour qui arrive pendant qu'une
+feuille de filtres ou une fiche est ouverte est mise en attente et appliquée à
+la fermeture : repeindre sous les doigts de quelqu'un qui saisit une note est
+le meilleur moyen de perdre cette note.
 
 **Renommer un membre est sans danger** : `attendees.owner` référence
 `team.name` en `on update cascade`, les contacts déjà attribués suivent.
 
 ---
 
+## Répartition des portefeuilles
+
+Le propriétaire d'un contact n'est **pas calculé**. C'est une décision
+humaine, elle se reprend en un clic, et rien dans le code ne la contraint.
+La répartition initiale du 28 août a suivi cinq règles appliquées dans cet
+ordre : dirigeants des clients et des exposants à Christophe et Karina ;
+fonction IT / ERP / Data hors dirigeants à Vincent ; salariés Esker
+francophones à Maxime et Bruno ; salariés Esker anglophones aux plus séniors
+pour Karina et aux opérationnels pour Enzo ; clients restants par société
+entière entre Lucas, Bruno et Maxime.
+
+Une part des contacts reste **volontairement libre**, dont les neuf analystes
+et journalistes. L'objectif est d'une soixantaine de contacts par personne,
+et personne n'y est : c'est à chacun de se servir. Les compteurs à jour sont
+dans l'annuaire, pas ici, parce qu'ils bougent tous les jours.
+
+Deux points qui se discutent sur le stand plutôt que dans ce fichier. Dans la
+dernière règle, **une société n'a qu'un seul propriétaire**, pour ne jamais
+solliciter deux fois le même compte ; les règles précédentes coupent au
+contraire en travers des sociétés, donc un directeur financier peut être chez
+Christophe et son responsable applicatif chez Vincent, c'est voulu. Et le
+partage francophone / anglophone chez Esker est une **déduction**, pas une
+donnée : la localisation n'est connue que pour 24 des 56 salariés Esker.
+
+La règle est aussi documentée dans `methode.html`, qui est la page que
+l'équipe ouvre pendant l'événement. Personne ne lira ce README sur le stand.
+
+## Quatre messages, un par famille de destinataire
+
+Le message prêt à copier dans la fiche dépend du segment. Le message unique
+des premières versions demandait à un salarié d'Esker comment il utilisait
+Esker, et à un prospect qui n'a jamais rien signé comment il l'utilisait
+aujourd'hui.
+
+| Famille | Angle |
+|---|---|
+| Client ou prospect | son processus, AP, AR, finance ou ERP selon `job_function`, **sans présumer qu'il est déjà client Esker** ; version courte et créneau borné pour un C-level ou un Director |
+| Équipe Esker | les comptes qu'il couvre et ce qu'il attend d'un intégrateur |
+| Exposant ou sponsor | entre pairs, aucun pitch |
+| Analyste ou presse | le point de vue de l'intégrateur sur le marché |
+| Collègue Fluxym | aucun message, le bloc disparaît de la fiche |
+
+La famille est **déduite du segment** (`MSG_KIND` dans `js/app.js`), jamais
+saisie. Le tag Whova `Speakers` ajoute une phrase sur la session du contact.
+Les messages sont en anglais, l'événement se tient à Rosemont ; l'interface
+reste en français, c'est notre outil interne.
+
+## Sur téléphone
+
+L'application est pensée pour être utilisée **debout sur le stand, d'une seule
+main, entre deux conversations**. Le test de référence : vérifier en cinq
+secondes si un participant est déjà pris et par qui. Tout le reste passe après.
+
+Un seul balisage, deux présentations, point de bascule à **900px** (`css/app.css`).
+Il n'existe pas de version mobile séparée : dupliquer les champs de filtre,
+c'est prendre le risque que deux valeurs divergent pour le même filtre.
+
+| | Ordinateur (> 900px) | Téléphone (≤ 900px) |
+|---|---|---|
+| Recherche | barre collante sous la navigation | idem, plein largeur |
+| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, puis **menu à deux niveaux** : liste des filtres, puis liste des valeurs en plein écran |
+| Choix d'une valeur | menu déroulant natif | liste de lignes de 52px, nombre de fiches par valeur, recherche interne au-delà de 12 options |
+| Filtres actifs | visibles dans le panneau | rappelés en pastilles supprimables sous la recherche |
+| Vues | onglets en haut | barre basse dans la zone du pouce, avec le compteur du portefeuille |
+| Tableau de bord | six indicateurs dépliés | replié, résumé en une ligne |
+| Index alphabétique | barre A-Z horizontale au-dessus de la liste | **curseur vertical collé au bord droit**, disponible pendant tout le défilement |
+| Fiches | grille de cartes | une colonne, texte agrandi |
+| Fiche détaillée | panneau latéral de 470px | **plein écran**, croix explicite ou glissé de l'entête vers le bas |
+| Liens de pages | dans la barre de navigation | dans le menu de la barre de navigation |
+
+Trois de ces choix viennent d'un essai sur téléphone, pas d'un principe :
+
+- **le curseur alphabétique latéral.** L'index horizontal obligeait à remonter
+  la liste entière pour changer de lettre. Le curseur reste sous le pouce
+  pendant tout le défilement : le doigt glisse, la liste suit, une bulle
+  affiche la lettre visée. Il n'affiche que les lettres atteignables après
+  filtrage, et disparaît en dessous de cinq lettres, où il serait trompeur.
+  Le saut se cale sous les barres collantes en mesurant leur position réelle.
+- **le menu de filtres à deux niveaux.** Un menu déroulant natif portant 182
+  sociétés se vise dans une roue, sans recherche. Les `<select>` restent la
+  source de vérité, y compris pour l'affichage sur ordinateur ; le menu les
+  double sans dupliquer l'état, donc deux valeurs ne peuvent pas diverger pour
+  le même filtre.
+- **la fiche en plein écran.** À 93dvh elle donnait une demi-page, ni panneau
+  ni page. Elle occupe maintenant tout l'écran : on l'ouvre, on saisit, on la
+  ferme, et on retrouve la liste à l'endroit où on l'avait laissée.
+
+Quatre contraintes tenues dans le CSS, chacune corrige un défaut constaté :
+
+- **Champs à 16px sur téléphone** (`--fs-field`). En dessous, Safari iOS zoome
+  de force à chaque frappe et la page déborde. C'était le défaut le plus
+  agaçant de la version précédente.
+- **Hauteurs des barres collantes en variables** (`--navh`, `--sbarh`,
+  `--stick`). Les ancres A-Z s'en servent pour leur `scroll-margin-top` :
+  avec une valeur recopiée à la main, et une navigation qui changeait de
+  hauteur selon le repli des liens, l'intertitre atterrissait sous l'entête.
+  C'est aussi la raison pour laquelle la barre de navigation garde une hauteur
+  fixe sur téléphone.
+- **`env(safe-area-inset-*)` sur tout ce qui est fixe**, en haut comme en bas.
+  La page déclare `viewport-fit=cover` : sans ces marges, l'iPhone superpose
+  sa barre d'accueil au bouton d'action de la fiche.
+- **`100dvh`, jamais `100vh`**, pour les feuilles et panneaux. Avec `100vh`,
+  le bouton *Enregistrer* passait sous la barre d'URL de Safari.
+- **Cibles tactiles à 44px minimum** (`--touch`), 46 à 52px pour les actions
+  principales et les lignes de menu. *Je prends* faisait 30px de haut.
+- **Échelle typographique, troisième passe (28 août).** Les deux premières
+  passes avaient grossi le nom en laissant le reste derrière : intitulé de
+  poste 13px, localisation 12px, pastilles 10,5px, libellés d'onglets 10,5px,
+  lettres du curseur A-Z 10px. Illisible debout, à bout de bras, dans une
+  allée éclairée au néon. Plancher retenu : **rien en dessous de 12px**, et
+  rien en dessous de 13px sur ce qu'on lit en marchant.
+
+  | Élément | Avant | Maintenant |
+  |---|---|---|
+  | Nom | 16,5px | **19px**, gras appuyé |
+  | Société | 14px | **16px**, gras |
+  | Intitulé de poste | 13px sur 2 lignes | **14,5px sur 1 ligne** |
+  | Localisation | 12px | **retirée de la carte** (elle reste dans la fiche) |
+  | Pastilles de priorité | 10,5px | **13px** |
+  | Qui a pris le contact | 12px, largeur ≤ 36% | **15px gras, largeur libre** |
+  | *Je prends* et statut | 46px | **50px** |
+  | Libellés d'onglets bas | 10,5px | **12px**, icônes 26px, barre 72px |
+  | Lettres du curseur A-Z | 10px | **12,5px**, gouttière 32px |
+  | Pastilles de filtre | 12,5px | **14px** |
+  | Libellés du tableau de bord | 10,5px | **12,5px** |
+  | Libellés de champ de la fiche | 11,5px | **13px** |
+
+  Deux arbitrages assumés. La **localisation disparaît de la carte** : elle
+  n'aide pas à décider d'aborder quelqu'un, et la place gagnée sert au nom.
+  L'**intitulé de poste tient sur une seule ligne** : une ligne suffit à
+  situer un interlocuteur, deux lignes de 13px faisaient de la carte un
+  paragraphe. Les deux données restent intégralement dans la fiche.
+
+  La ligne d'action de la carte peut désormais **passer à la ligne**
+  (`flex-wrap`) : le nom de la personne qui a pris le contact n'est plus
+  comprimé dans 36% de la largeur, puisque c'est l'information que l'on vient
+  chercher en cinq secondes.
+
+**Ajout à l'écran d'accueil.** `manifest.webmanifest` et les balises Apple
+permettent de lancer l'application en plein écran, sans barre d'URL.
+Deux limites à connaître :
+
+- **aucun fonctionnement hors ligne.** Il n'y a pas de *service worker*, et
+  c'est délibéré : sur un outil de répartition partagé, un cache mal maîtrisé
+  afficherait des attributions périmées, exactement ce que l'application
+  existe pour éviter. Sans réseau, l'application ne se charge pas.
+- **l'icône n'est pas définitive.** Le manifeste ne référence que
+  `assets/favicon.ico`. Pour une vraie icône, il faut ajouter
+  `assets/icon-192.png`, `assets/icon-512.png` et `assets/apple-touch-icon.png`
+  (180×180), puis les déclarer ; iOS ignore le manifeste pour l'icône et lit
+  uniquement `apple-touch-icon`.
+
+---
+
 ## Segmentation
 
-**420 participants** au 28 août : 419 venus de l'annuaire Whova, plus la fiche
-de Lucas De LA VILLARDIERE, créée à la main parce qu'il n'était pas encore
-inscrit. L'écart avec ce qu'affiche Whova est une information, pas un défaut :
-les inscriptions continuent.
+**420 fiches** au 28 août 2026 : les **419 participants** de l'annuaire Whova
+à cette date, plus une fiche saisie à la main pour Lucas De LA VILLARDIERE
+(`FX-LDLV`), qui n'est pas encore inscrit. Le volume bouge : 418 à l'import,
+419 après l'enrichissement de la page 1, et Whova affichait 425 inscrits le
+27 août. L'écart entre l'annuaire en ligne et la base est une information à
+relever, pas un détail à lisser.
+
+L'identifiant `FX-LDLV` sort volontairement de la série `P…` : quand Lucas
+s'inscrira sur Whova, une seconde fiche apparaîtra à côté de celle-ci, et le
+doublon doit se voir.
 
 | Segment | Nb | Description |
 |---|---:|---|
@@ -236,32 +511,12 @@ les inscriptions continuent.
 | `Fluxym (nous)` | 8 | nos collègues, masqués par défaut |
 
 Répartition des cibles par fonction : Finance / Treasury 66, AP / P2P 59,
-AR / O2C / Credit 58, IT / ERP / Data 38, Sales / Marketing / Partner 20,
+AR / O2C / Credit 57, IT / ERP / Data 38, Sales / Marketing / Partner 20,
 Direction générale 15, Autre 39.
-
-### Répartition des portefeuilles
-
-Au 28 août, **255 contacts sur 412** hors collègues Fluxym ont un propriétaire,
-et **157 restent volontairement libres** : Christophe 42, Vincent 40, Karina 37,
-Bruno 36, Lucas 35, Maxime 34, Enzo 30, Marie Pierre 0. L'objectif est une
-soixantaine chacun, atteinte en se servant dans les contacts libres.
-
-Les règles appliquées, dans l'ordre : les dirigeants à Christophe et Karina,
-toute la fonction informatique hors dirigeants à Vincent, les salariés Esker
-francophones à Maxime et Bruno, les anglophones à Karina pour les 18 plus
-séniors et à Enzo pour les opérationnels, puis les clients restants par société
-entière à Lucas, Bruno et Maxime. Le détail est page **Méthode**, section *Qui
-contacte qui*, parce que c'est là que quelqu'un le cherchera pendant
-l'événement.
-
-**Le propriétaire n'est jamais calculé** : aucun trigger, aucune formule, une
-décision humaine réversible depuis la fiche. Le partage francophone /
-anglophone chez Esker est une déduction sur les noms, la localisation n'étant
-connue que pour 24 des 56 salariés Esker.
 
 ### Priorité de contact
 
-**118 A, 183 B, 111 C.** La règle complète est exposée dans l'application
+**117 A, 183 B, 111 C.** La règle complète est exposée dans l'application
 elle-même, page **Méthode** : c'est là qu'il faut la lire et la maintenir, pas
 dans ce fichier que personne n'ouvrira pendant l'événement.
 
