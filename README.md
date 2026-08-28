@@ -174,6 +174,27 @@ passé : les fichiers étaient corrects dans le dépôt, l'interface semblait
 inchangée, et rien à l'écran ne permettait de trancher. Un marqueur visible
 coûte une ligne de CSS et supprime la question.
 
+### `diag.html`, page de diagnostic d'affichage
+
+Accessible sans connexion sur `/diag.html`. Elle charge la vraie feuille de
+style et **mesure ce que le navigateur applique reellement** : largeur utile de
+la page, mise en page retenue, taille du nom sur une fiche, hauteur du bouton
+d'action. Elle affiche aussi une fiche de demonstration avec le vrai CSS et la
+bande de lettres, ce qui permet de juger l'ergonomie sans se connecter.
+
+Son interet est de trancher entre trois causes qui produisent le meme symptome
+apparent, à savoir « rien n'a change » :
+
+1. la fenetre depasse 900px, donc la mise en page ordinateur est normale ;
+2. le navigateur applique une feuille anterieure, malgre un fichier correct en
+   ligne, ce qui pointe un cache, un proxy reseau ou une application ajoutee a
+   l'ecran d'accueil ;
+3. la feuille n'est pas chargee du tout.
+
+Elle appelle le CSS avec `?diag=...`, une URL utilisee nulle part ailleurs,
+pour qu'aucune entree de cache existante ne puisse la servir. Elle ne charge ni
+`js/config.js` ni `js/api.js` et ne touche a aucune donnee.
+
 ### `.nojekyll`
 
 **Ce fichier est absent du dépôt au 28 août 2026**, alors qu'une version
