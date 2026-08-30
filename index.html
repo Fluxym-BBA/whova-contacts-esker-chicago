@@ -10,14 +10,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stand Esker">
 <title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="manifest" href="./manifest.webmanifest?v=20260828h">
-<link rel="icon" href="./assets/favicon.ico" sizes="48x48">
+<link rel="manifest" href="./manifest.webmanifest?v=20260830a">
+<link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="./assets/icon-192.png" sizes="192x192">
 <!-- iOS ignore purement et simplement le manifeste : sans la balise qui suit,
      l'icone posee sur l'ecran d'accueil est une vignette floue de la page. -->
 <link rel="apple-touch-icon" href="./assets/apple-touch-icon-180.png" sizes="180x180">
+<!-- Les deux tailles iPad. Sans elles, iOS redimensionne le 180 et le
+     redimensionnement d'une icone a bords nets est exactement ce qui la fait
+     paraitre crenelee. -->
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon-167.png" sizes="167x167">
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon-152.png" sizes="152x152">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/app.css?v=20260828h">
+<link rel="stylesheet" href="./css/app.css?v=20260830a">
+<link rel="stylesheet" href="./css/install.css?v=20260830a">
 </head>
 <body class="app">
 <div class="veil">Chargement de l'annuaire…</div>
@@ -195,9 +201,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260828h"></script>
-<script src="./js/api.js?v=20260828h"></script>
-<script src="./js/nav.js?v=20260828h"></script>
-<script src="./js/app.js?v=20260828h"></script>
+<script src="./js/config.js?v=20260830a"></script>
+<script src="./js/api.js?v=20260830a"></script>
+<script src="./js/nav.js?v=20260830a"></script>
+<script src="./js/app.js?v=20260830a"></script>
+<!-- Bouton et fiche « Installer l'annuaire ». Charge en dernier, sans
+     dependance a FX : tout son balisage est cree par le script, donc cette
+     page ne porte que la ligne de style et celle-ci. -->
+<script src="./js/install.js?v=20260830a"></script>
 </body>
 </html>

@@ -1,0 +1,104 @@
+/* ==========================================================================
+   Fluxym · Stand Esker All Access 2026
+   Installation sur l'ecran d'accueil : boutons, invitation basse et fiche.
+
+   Feuille separee, et c'est volontaire. css/app.css est le fichier que tous
+   les sujets en cours modifient ; y ajouter cent lignes garantit qu'une
+   livraison en efface une autre. Tout ce qui est ici est prefixe fxi-, ne
+   redefinit aucune classe existante et reutilise les variables de app.css
+   (--navy, --accent, --tabh, --safe-b) : la bascule 900px, les zones sures
+   iPhone et la hauteur de la barre d'onglets restent decidees a un seul
+   endroit.
+
+   Chargee apres app.css, avant toute personnalisation ulterieure.
+   ========================================================================== */
+
+/* ------------------------------------------------------- bouton dans la nav */
+/* Ordinateur seulement : sous 900px la navigation se replie dans le menu
+   burger et c'est .fxi-mlink qui prend le relais. La requete media est
+   recopiee a l'identique de app.css, y compris le cas tablette tactile
+   large, sinon le bouton reapparait sur iPad en paysage. */
+.fxi-navbtn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);
+  border:0;color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600}
+.fxi-navbtn:hover{background:rgba(255,255,255,.2)}
+.fxi-navbtn svg{width:15px;height:15px}
+
+/* Entree du menu telephone. .nav-mlink est prevu pour un <a>, on remet donc
+   ce qu'un <button> apporte de travers : fond, bordure, largeur, alignement. */
+.fxi-mlink{gap:10px;background:none;border:0;width:100%;text-align:left;
+  font-family:inherit;font-size:15px;font-weight:600}
+.fxi-mlink svg{width:18px;height:18px;flex:0 0 auto}
+
+@media (max-width:900px),(max-width:1280px) and (pointer:coarse) and (hover:none){
+  .fxi-navbtn{display:none}
+}
+@media (min-width:901px) and (pointer:fine){
+  .fxi-mlink{display:none}
+}
+
+/* ------------------------------------------------------- invitation en bas */
+/* Meme emplacement que .fxbar, un cran plus bas dans la pile (z-index 130
+   contre 140) : si les deux devaient s'afficher, c'est le message de service
+   qui gagne. js/install.js s'assure d'ailleurs qu'ils ne coexistent pas. */
+.fxi-hint{position:fixed;left:8px;right:8px;bottom:calc(8px + var(--tabh) + var(--safe-b));
+  z-index:130;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;
+  border-radius:14px;background:var(--navy);color:#fff;
+  box-shadow:0 10px 30px rgba(15,23,42,.28);animation:fxi-rise .22s ease-out}
+.fxi-hint-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fxi-hint-txt b{font-size:14px;font-weight:700}
+.fxi-hint-txt span{font-size:12px;color:rgba(255,255,255,.72);line-height:1.35}
+.fxi-hint-act{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.fxi-hint-go{background:#fff;color:var(--ink);border:0;border-radius:10px;padding:10px 13px;
+  font-size:13px;font-weight:700;min-height:var(--touch)}
+.fxi-hint-x{background:transparent;border:0;color:rgba(255,255,255,.72);font-size:22px;
+  line-height:1;padding:0 6px;min-width:32px;min-height:var(--touch)}
+
+@keyframes fxi-rise{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+
+@media (min-width:901px) and (pointer:fine){
+  .fxi-hint{left:auto;right:20px;bottom:20px;max-width:430px}
+}
+
+/* -------------------------------------------------------------- la fiche */
+/* Feuille remontante sur telephone, boite centree sur ordinateur. Le contenu
+   est le meme, seule la mise en forme change : une consigne d'installation se
+   lit au pouce, en tenant le telephone qu'on est en train de configurer. */
+.fxi-back{position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.5);
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+body.fxi-open{overflow:hidden}
+
+.fxi-sheet{position:fixed;z-index:201;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;
+  background:var(--card);border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(15,23,42,.3);
+  padding-bottom:calc(18px + var(--safe-b));animation:fxi-rise .24s ease-out;
+  -webkit-overflow-scrolling:touch}
+
+.fxi-head{position:sticky;top:0;background:var(--card);display:flex;align-items:center;
+  justify-content:space-between;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+.fxi-head h2{margin:0;font-size:17px;font-weight:800}
+.fxi-x{background:transparent;border:0;font-size:26px;line-height:1;color:var(--muted);
+  padding:0 4px;min-width:var(--touch);min-height:var(--touch)}
+
+.fxi-body{padding:16px 18px 4px}
+.fxi-lead{margin:0 0 14px;font-size:14px;line-height:1.5;color:var(--ink)}
+.fxi-note{margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+
+.fxi-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.fxi-steps li{display:flex;gap:12px;align-items:flex-start}
+.fxi-steps i{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--navy);
+  color:#fff;font-style:normal;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.fxi-steps div{font-size:14px;line-height:1.5;padding-top:3px}
+.fxi-steps b{font-weight:700}
+/* Les pictogrammes cites dans le texte sont ceux que la personne a sous les
+   yeux dans Safari : ils s'alignent sur la ligne de base du texte, sinon la
+   phrase se disloque. */
+.fxi-steps svg{width:17px;height:17px;vertical-align:-3px;color:var(--accent)}
+
+.fxi-cta{display:block;width:100%;margin:18px 0 0;min-height:48px;border:0;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:15px;font-weight:700}
+.fxi-cta.ghosted{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+
+@media (min-width:901px) and (pointer:fine){
+  .fxi-sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%);
+    width:min(520px,92vw);border-radius:16px;padding-bottom:18px;animation:none}
+}

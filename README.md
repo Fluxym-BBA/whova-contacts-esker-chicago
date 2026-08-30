@@ -165,17 +165,22 @@ combien de contacts redeviendront libres.
 ├── ecran.html                    diagnostic : ce que l'appareil déclare
 ├── manifest.webmanifest          installation sur l'écran d'accueil (voir « Sur téléphone »)
 ├── sw.js                         service worker : coquille en cache, ouverture hors réseau
-├── css/app.css
+├── css/
+│   ├── app.css                   feuille unique, partagée par toutes les pages
+│   └── install.css               boutons et fiche « Installer » (voir « Sur téléphone »)
 ├── js/
 │   ├── config.js                 URL + clé anon
 │   ├── api.js                    client, garde d'authentification, appels admin
-│   └── nav.js                    navigation partagée
+│   ├── nav.js                    navigation partagée
+│   └── install.js                installation sur l'écran d'accueil
 ├── assets/
-│   ├── favicon.ico               onglet de navigateur
+│   ├── favicon.ico               onglet de navigateur, 16/32/48/64
 │   ├── icon-192.png              Android, écran d'accueil
 │   ├── icon-512.png              Android, écran de démarrage
 │   ├── icon-maskable-512.png     Android, icône rognée par le système
-│   └── apple-touch-icon-180.png  iOS, qui ignore le manifeste
+│   ├── apple-touch-icon-180.png  iPhone, iOS ignore le manifeste
+│   ├── apple-touch-icon-167.png  iPad Pro
+│   └── apple-touch-icon-152.png  iPad et iPad mini
 ├── supabase/
 │   ├── functions/admin-users/index.ts
 │   └── migrations/*.sql
@@ -405,6 +410,17 @@ Une livraison qui oublie `VERSION` ne changera donc rien sur les téléphones de
 l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
 mardi matin sur un stand. En cas de doute : le marqueur `interface v6` de
 l'en-tête dit quelle feuille de style est réellement chargée.
+
+**Version déployée le 30 août : `20260830a`, sur `index.html` et `sw.js`
+seulement.** `login.html`, `methode.html`, `compte.html` et `admin.html`
+restent volontairement sur `20260828h`, pour ne pas réécrire quatre fichiers
+qu'aucune de leurs modifications ne concerne. La divergence est sans effet ici
+parce que `sw.js` retombe sur `cache.match(..., { ignoreSearch: true })`
+lorsque l'URL exacte n'est pas en cache : les quatre pages continuent donc de
+s'ouvrir hors réseau avec le `css/app.css` mis en cache sous la nouvelle
+étiquette. À la prochaine livraison qui touche `css/app.css` ou `js/app.js`,
+les cinq pages doivent repasser à la même valeur. `interface v6` est inchangé,
+`css/app.css` n'ayant pas été modifié.
 
 ---
 
@@ -640,6 +656,73 @@ L'écran de démarrage utilise `background_color` (`#f5f7fb`, le fond clair de
 l'application) et non le bleu nuit de la barre : un flash sombre suivi d'une
 interface claire se remarque plus qu'on ne l'imagine. `orientation` est fixé
 à `portrait` : sur un stand, l'application se tient d'une main.
+
+#### Les icônes, et pourquoi elles ont été refaites le 30 août
+
+Les icônes précédentes (monogramme `FX` blanc, ombre portée) étaient tracées
+avec des bords durs et une ombre d'un pixel. Sur un iPhone, l'icône de l'écran
+d'accueil n'est pas la seule taille utilisée : iOS redescend la même image en
+120 pixels pour Spotlight, l'écran verrouillé et le sélecteur d'applications.
+Redimensionner une image à bords durs sans demi-teintes donne un escalier
+visible, et c'est ce qui donnait cette impression d'icône pixelisée. Le
+`icon-512.png` avait en plus des coins arrondis **remplis en noir** : comme
+Android et iOS appliquent ensuite leur propre masque, ces coins ressortaient en
+liseré sombre.
+
+Le jeu actuel est tracé à 2048 pixels puis réduit en Lanczos, ce qui produit
+les demi-teintes nécessaires, sans ombre portée, sans transparence, sans coins
+arrondis : c'est au système d'arrondir. La lettre **E** est construite en
+rectangles, sans police, pour rester nette à toutes les tailles et pour ne
+dépendre d'aucune fonte installée. Le liseré bleu et cyan reprend l'accent de
+l'interface (`--accent`, `--accent-2`). Le `favicon.ico` embarque quatre
+tailles (16, 32, 48, 64) et se passe du liseré, illisible à 16 pixels.
+
+L'icône dit **E**, pour Esker All Access, et non plus **FX** : les téléphones
+de l'équipe portent aussi le carnet de voyage du séjour, dont l'icône est aux
+couleurs du drapeau de Chicago. Deux icônes bleu nuit indiscernables sur le
+même écran d'accueil, c'est une application ouverte pour rien entre deux
+visiteurs.
+
+**iOS ne rafraîchit jamais l'icône d'une application déjà posée sur l'écran
+d'accueil.** Après cette livraison, il faut supprimer le raccourci et le
+réinstaller, sinon l'ancienne icône reste, et on croit la livraison ratée.
+
+### Le bouton « Installer l'annuaire »
+
+Le service worker ne sert à rien si l'annuaire vit dans un onglet perdu au
+milieu de quinze autres. `js/install.js` ajoute donc un point d'entrée unique :
+un bouton dans la barre de navigation sur ordinateur, une entrée dans le menu
+sur téléphone, et une invitation basse affichée **une seule fois par appareil**,
+quatre secondes après l'ouverture, jamais pendant qu'un message de service
+(`#fx-bar`) est affiché, et jamais quand l'application est déjà installée.
+
+La règle qui gouverne tout le fichier : **ne jamais afficher une consigne que
+la personne ne peut pas suivre.** Cinq situations, cinq contenus.
+
+| Contexte | Ce qui est proposé |
+| --- | --- |
+| Chrome, Edge, Android | la vraie boîte de dialogue du système, via `beforeinstallprompt` mis de côté au chargement |
+| Safari sur iPhone | le geste exact : Partager, puis « Sur l'écran d'accueil », puis Ajouter |
+| iPhone **hors Safari** | ouvrir d'abord la page dans Safari, avec le lien prêt à copier |
+| Firefox Android | le menu du navigateur, faute d'API |
+| Safari macOS | Fichier, puis Ajouter au Dock |
+| Autre navigateur de bureau | le dire, et renvoyer vers le téléphone |
+
+Le troisième cas est celui qui motivait le sujet. Un lien envoyé par WhatsApp,
+Teams, LinkedIn ou Gmail s'ouvre dans le navigateur intégré à ces
+applications, où « Sur l'écran d'accueil » **n'existe pas**. Y afficher la
+consigne de Safari envoie quelqu'un chercher un bouton absent. La détection ne
+passe pas par l'agent utilisateur, qui ne dit rien de fiable pour ces
+navigateurs intégrés, mais par `navigator.standalone` : cette propriété
+n'existe que dans Safari mobile et dans une application installée. Absente sur
+un iPhone, on est dans une webview.
+
+`js/install.js` ne lit ni n'écrit rien dans Supabase, ne dépend pas de `FX` et
+crée lui-même tout son balisage : `index.html` ne porte que deux lignes, une
+feuille de style et un script. `css/install.css` est séparée de `css/app.css`
+pour la même raison, deux livraisons parallèles qui réécrivent la même feuille
+s'effaçant l'une l'autre. Le bouton n'est ajouté qu'à `index.html` : la page de
+connexion ne le propose pas encore.
 
 ### Le geste retour, et pourquoi il compte plus que le reste
 

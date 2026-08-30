@@ -36,7 +36,7 @@
       pas un mardi matin sur un stand.
    -------------------------------------------------------------------------- */
 
-const VERSION = "20260828h";
+const VERSION = "20260830a";
 const SHELL   = "fx-shell-"   + VERSION;   /* pages, styles, scripts, icones */
 const VENDOR  = "fx-vendor-"  + VERSION;   /* polices Google et supabase-js  */
 const PATIENCE = 1200;                     /* ms accordees au reseau         */
@@ -58,12 +58,16 @@ const SHELL_FILES = [
   "./js/methode.js?v=" + VERSION,
   "./js/login.js?v=" + VERSION,
   "./js/compte.js?v=" + VERSION,
+  "./js/install.js?v=" + VERSION,
+  "./css/install.css?v=" + VERSION,
   "./manifest.webmanifest?v=" + VERSION,
   "./assets/favicon.ico",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/icon-maskable-512.png",
-  "./assets/apple-touch-icon-180.png"
+  "./assets/apple-touch-icon-180.png",
+  "./assets/apple-touch-icon-167.png",
+  "./assets/apple-touch-icon-152.png"
 ];
 
 /* Sans ces trois la, il n'y a pas d'annuaire hors reseau : si l'une manque,
