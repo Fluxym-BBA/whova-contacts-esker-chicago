@@ -134,8 +134,13 @@
   /* Fluxym est masque par defaut : ce sont nos propres collegues, aucun interet dans
    l'annuaire. Esker est visible par defaut : les equipes de l'editeur sont des
    interlocuteurs que nous voulons aussi aller voir sur place. */
-  const F = { q:"", priority:"", segment:"", job_function:"", seniority:"", owner:"", status:"",
-              company:"", hideFluxym:true, hideEsker:false };
+  /* Chaque filtre porte une LISTE de valeurs, jamais une valeur seule. Une
+     liste vide veut dire « pas de filtre », exactement comme l'ancienne chaine
+     vide. On voulait souvent croiser deux fonctions metier ou deux societes, et
+     un choix unique obligeait a faire deux passes sur la liste en retenant de
+     tete le resultat de la premiere. */
+  const F = { q:"", priority:[], segment:[], job_function:[], seniority:[], owner:[], status:[],
+              company:[], hideFluxym:true, hideEsker:false };
 
   const FDEFS = [
     ["priority",     "#f-priority",  "Priorité"],
@@ -158,10 +163,46 @@
       sel.value = cur;
     };
     const uniq = k => [...new Set(ROWS.map(r => r[k]).filter(Boolean))].sort();
-    fill($("#f-segment"), uniq("segment"));
-    fill($("#f-function"), uniq("job_function"));
-    fill($("#f-seniority"), uniq("seniority"));
-    fill($("#f-company"), uniq("company"));
+    const vals = { segment:uniq("segment"), job_function:uniq("job_function"),
+                   seniority:uniq("seniority"), company:uniq("company") };
+    fill($("#f-segment"),   vals.segment);
+    fill($("#f-function"),  vals.job_function);
+    fill($("#f-seniority"), vals.seniority);
+    fill($("#f-company"),   vals.company);
+
+    /* Une societe filtree qui disparait de la base laisserait un filtre
+       invisible et une liste vide sans explication. On ne purge que les quatre
+       filtres dont les valeurs viennent des donnees : priorite, statut et
+       attribution ont des options fixes, il n'y a rien a y nettoyer. */
+    Object.keys(vals).forEach(k => {
+      if (!F[k].length) return;
+      const ok = new Set(vals[k]);
+      F[k] = F[k].filter(v => ok.has(v));
+    });
+  }
+
+  /* Libelle lisible d'une valeur : on va le chercher dans les options du
+     <select>, qui reste le reservoir de reference. « A — a voir absolument »
+     est tronque a « A », suffisant dans une pastille. */
+  function optLabel(k, v) {
+    const d = FDEFS.find(x => x[0] === k);
+    const el = d && $(d[1]);
+    const o = el && [...el.options].find(x => x.value === v);
+    return ((o ? o.textContent : v) || "").trim().split(" — ")[0];
+  }
+
+  /* Ce qu'affiche un bouton de filtre ou une ligne du menu. Deux valeurs
+     courtes tiennent en clair, au-dela on compte : « Priorite A, B » se lit
+     mieux que « 2 selectionnees », mais pas « Societe Lassonde Pappas &
+     Company, A. Lassonde, Esker ». */
+  function summary(k) {
+    const d = FDEFS.find(x => x[0] === k);
+    const el = d && $(d[1]);
+    const none = el ? el.options[0].textContent.trim() : "Tous";
+    const n = F[k].length;
+    if (!n) return none;
+    const txt = F[k].map(v => optLabel(k, v)).join(", ");
+    return txt.length <= 24 ? txt : n + " sélectionné" + (n > 1 ? "s" : "");
   }
 
   /* Recherche : un rendu par frappe sur plus de 400 cartes fait decrocher un
@@ -183,16 +224,20 @@
     $("#q").value = ""; $("#q-clear").hidden = true; F.q = ""; render(); $("#q").focus();
   };
 
-  FDEFS.forEach(([k, sel]) => $(sel).onchange = e => { F[k] = e.target.value; render(); });
+  /* Les <select> ne sont plus pilotes directement : ils portent les options et
+     les libelles, la selection vit dans F et se fait dans le panneau a cases.
+     Un <select> natif ne sait pas faire du multiple sans Ctrl+clic, ce qui est
+     hors de question au doigt sur un stand. */
   $("#f-hide-fluxym").onchange = e => { F.hideFluxym = e.target.checked; render(); };
   $("#f-hide-esker").onchange  = e => { F.hideEsker  = e.target.checked; render(); };
 
   function resetFilters() {
-    Object.assign(F, { q:"",priority:"",segment:"",job_function:"",seniority:"",owner:"",status:"",company:"",
-                       hideFluxym:true, hideEsker:false });
+    F.q = "";
+    FDEFS.forEach(([k]) => { F[k] = []; });
+    F.hideFluxym = true; F.hideEsker = false;
     $("#q").value = ""; $("#q-clear").hidden = true;
-    $$("#filters select").forEach(s => s.value = "");
     $("#f-hide-fluxym").checked = true; $("#f-hide-esker").checked = false;
+    if (subOpen()) paintSubList($("#fsub-q").value);
     render();
   }
   $("#reset-btn").onclick = resetFilters;
@@ -201,10 +246,15 @@
   function match(r) {
     if (F.hideFluxym && r.segment === SEG_FLUXYM) return false;
     if (F.hideEsker  && r.segment === SEG_ESKER)  return false;
+    /* Plusieurs valeurs sur un meme filtre s'additionnent (OU), deux filtres
+       differents se cumulent (ET) : « fonction Finance ou Achats, et seniorite
+       Direction » est la question qu'on se pose reellement devant le stand. */
     for (const k of ["priority","segment","job_function","seniority","status","company"])
-      if (F[k] && r[k] !== F[k]) return false;
-    if (F.owner === "__none__" && r.owner) return false;
-    if (F.owner && F.owner !== "__none__" && r.owner !== F.owner) return false;
+      if (F[k].length && !F[k].includes(r[k])) return false;
+    if (F.owner.length) {
+      const key = r.owner || "__none__";
+      if (!F.owner.includes(key)) return false;
+    }
     if (F.q) {
       const hay = [r.full_name,r.company,r.title,r.location,r.notes,r.interest].join(" ").toLowerCase();
       if (!F.q.split(/\s+/).every(w => hay.includes(w))) return false;
@@ -320,19 +370,31 @@
      source de verite (ils portent les options et la valeur, et servent
      l'affichage sur ordinateur) et on les double d'un menu a deux niveaux :
      la liste des filtres, puis la liste des valeurs en plein ecran. */
-  let SUBKEY = null;
+  let SUBKEY = null, SUB_TOUCHED = false;
 
   function paintFmenu() {
-    $("#fmenu").innerHTML = FDEFS.map(([k, sel, label]) => {
-      const el  = $(sel);
-      const opt = el.selectedOptions[0];
-      const val = F[k] && opt ? opt.textContent.trim().split(" — ")[0]
-                              : el.options[0].textContent.trim();
-      return `<button class="fmrow ${F[k] ? "set" : ""}" type="button" data-fkey="${k}">
-        <span class="fmlab">${label}</span><span class="fmval">${esc(val)}</span>
+    $("#fmenu").innerHTML = FDEFS.map(([k, sel, label]) =>
+      `<button class="fmrow ${F[k].length ? "set" : ""}" type="button" data-fkey="${k}">
+        <span class="fmlab">${label}</span><span class="fmval">${esc(summary(k))}</span>
         <svg class="fmchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-      </button>`;
-    }).join("");
+      </button>`).join("");
+  }
+
+  /* Ordinateur : meme mecanique, autre habillage. Le bouton remplace le menu
+     deroulant et ouvre la meme liste a cocher, donc une seule logique a
+     maintenir et la recherche par societe devient disponible au clavier. */
+  function paintPicks() {
+    FDEFS.forEach(([k]) => {
+      const b = $(`.fpick[data-fkey="${k}"]`);
+      if (!b) return;
+      const n = F[k].length;
+      b.classList.toggle("set", n > 0);
+      const v = $(".fpv", b);
+      if (v) v.textContent = summary(k);
+      const c = $(".fpn", b);
+      if (c) { c.hidden = n < 2; c.textContent = n; }
+      b.setAttribute("aria-expanded", SUBKEY === k ? "true" : "false");
+    });
   }
 
   /* Nombre de fiches par valeur : choisir « Société » a l'aveugle sur 182
@@ -352,15 +414,33 @@
     const d = FDEFS.find(x => x[0] === SUBKEY); if (!d) return;
     const el = $(d[1]), counts = subCounts(SUBKEY);
     const needle = (q || "").trim().toLowerCase();
-    const items = [...el.options].filter(o => !needle || o.textContent.toLowerCase().includes(needle));
+    /* La premiere option (« Toutes », « Tous ») n'est pas une valeur : en
+       choix multiple, « aucune case cochee » dit deja la meme chose. Elle est
+       remplacee par le bouton « Tout effacer » du pied. */
+    const items = [...el.options].slice(1)
+      .filter(o => !needle || o.textContent.toLowerCase().includes(needle));
+    const on = new Set(F[SUBKEY]);
     $("#fsub-list").innerHTML = items.map(o => {
-      const n = counts.get(o.value);
-      return `<button class="fsopt ${o.value === el.value ? "on" : ""}" type="button" data-val="${esc(o.value)}">
+      const n = counts.get(o.value), sel = on.has(o.value);
+      return `<button class="fsopt ${sel ? "on" : ""}" type="button" role="checkbox"
+        aria-checked="${sel}" data-val="${esc(o.value)}">
+        <i class="fsbox" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></i>
         <span>${esc(o.textContent.trim())}</span>
         ${n ? `<em>${n}</em>` : ""}
-        ${o.value === el.value ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>' : ""}
       </button>`;
     }).join("") || '<div class="empty">Aucune valeur ne correspond.</div>';
+    paintSubFoot();
+  }
+
+  /* Pied du panneau de valeurs. Il existe pour une raison precise : en choix
+     multiple, cocher ne referme plus rien, il faut donc un geste de sortie
+     explicite et un compte de ce qui est retenu. */
+  function paintSubFoot() {
+    const n = SUBKEY ? F[SUBKEY].length : 0;
+    const clr = $("#fsub-clear"), done = $("#fsub-done");
+    if (clr)  clr.hidden = n === 0;
+    if (done) done.textContent = n ? `Terminé · ${n} retenu${n > 1 ? "s" : ""}` : "Terminé";
   }
 
   function openSub(k, fromHist) {
@@ -370,34 +450,59 @@
     /* Champ de recherche seulement quand la liste est longue : sur six
        statuts il ne sert a rien et vole une ligne. */
     $("#fsub-search").hidden = $(d[1]).options.length <= 12;
+    SUB_TOUCHED = false;
     $("#fsub-q").value = "";
     paintSubList("");
     $("#fsub-list").scrollTop = 0;
     $("#fsub").hidden = false;
     document.body.classList.add("sub-open");
+    paintPicks();
     if (!fromHist) panelPushed();
   }
   function closeSub(fromHist) {
     $("#fsub").hidden = true;
     document.body.classList.remove("sub-open");
     SUBKEY = null;
+    /* Les cartes n'ont pas ete repeintes pendant que le panneau etait ouvert
+       (voir render). C'est ici qu'on rattrape, et seulement si quelque chose a
+       reellement change. */
+    const touched = SUB_TOUCHED;
+    SUB_TOUCHED = false;
     panelPopped(fromHist);
+    if (touched) render(); else paintPicks();
   }
   const subOpen = () => !$("#fsub").hidden;
 
-  $("#fmenu").onclick = e => {
+  /* Un seul ecouteur pour les deux habillages : les lignes du menu sur
+     telephone et les boutons du panneau sur ordinateur portent le meme
+     data-fkey. */
+  $("#filters").addEventListener("click", e => {
     const r = e.target.closest("[data-fkey]");
-    if (r) openSub(r.dataset.fkey);
-  };
+    if (!r) return;
+    if (SUBKEY === r.dataset.fkey) closeSub(); else openSub(r.dataset.fkey);
+  });
   $("#fsub-back").onclick = () => closeSub();
+  $("#fsub-done").onclick = () => closeSub();
+  $("#fsub-clear").onclick = () => {
+    if (!SUBKEY) return;
+    F[SUBKEY] = []; SUB_TOUCHED = true;
+    paintSubList($("#fsub-q").value);
+    render(true);
+  };
+  /* Cliquer a cote du panneau le referme. Sur telephone il occupe tout
+     l'ecran, ce cas ne se presente donc que sur ordinateur. */
+  $("#fsub").addEventListener("click", e => { if (e.target.id === "fsub") closeSub(); });
   $("#fsub-q").oninput = e => paintSubList(e.target.value);
   $("#fsub-list").onclick = e => {
-    const b = e.target.closest("[data-val]"); if (!b) return;
-    const d = FDEFS.find(x => x[0] === SUBKEY); if (!d) return;
-    $(d[1]).value = b.dataset.val;
-    F[SUBKEY] = b.dataset.val;
-    closeSub();          /* choix fait, on remonte : un aller-retour, pas deux */
-    render();
+    const b = e.target.closest("[data-val]"); if (!b || !SUBKEY) return;
+    const arr = F[SUBKEY], v = b.dataset.val, i = arr.indexOf(v);
+    if (i < 0) arr.push(v); else arr.splice(i, 1);
+    SUB_TOUCHED = true;
+    /* On ne referme pas : le geste attendu est d'en cocher plusieurs de
+       suite. Le compteur du pied et celui du bouton « Voir les resultats »
+       suivent en direct, la grille attend la fermeture. */
+    paintSubList($("#fsub-q").value);
+    render(true);
   };
 
   /* ---------------- Curseur alphabetique lateral ----------------
@@ -576,11 +681,14 @@
   function paintChips() {
     const chips = [];
     FDEFS.forEach(([k, sel, label]) => {
-      if (!F[k]) return;
-      const el = $(sel);
-      const opt = el.selectedOptions[0];
-      const txt = (opt ? opt.textContent : F[k]).trim().split(" — ")[0];
-      chips.push(`<span class="fchip"><b>${label}</b> ${esc(txt)}
+      if (!F[k].length) return;
+      /* Une pastille par filtre, pas une par valeur : trois societes retenues
+         donnent une pastille lisible, pas trois pastilles qui poussent le reste
+         hors de l'ecran. La croix retire le filtre entier ; pour n'en enlever
+         qu'une, on rouvre la liste, qui est a un geste. */
+      const txt = F[k].map(v => optLabel(k, v)).join(", ");
+      const short = txt.length <= 40 ? txt : F[k].length + " valeurs";
+      chips.push(`<span class="fchip"><b>${label}</b> ${esc(short)}
         <button data-unset="${k}" aria-label="Retirer le filtre ${label}">&times;</button></span>`);
     });
     if (!F.hideFluxym) chips.push(`<span class="fchip"><b>Fluxym</b> affiché
@@ -598,7 +706,11 @@
     $("#chipbar").hidden = n === 0;
   }
 
-  function render() {
+  /* `soft` : on recalcule et on met a jour tous les compteurs, mais on ne
+     repeint pas les cartes. Sert pendant que la liste de valeurs est ouverte :
+     cocher trois societes de suite ne doit pas reconstruire quatre cents cartes
+     trois fois sous les doigts. La grille est peinte a la fermeture. */
+  function render(soft) {
     LIST = ROWS.filter(match);
     DIRTY.list = DIRTY.mine = DIRTY.team = true;
 
@@ -607,7 +719,9 @@
       ? `Voir les ${LIST.length} résultats` : "Aucun résultat";
     $("#mine-count").textContent = mineRows().length;
 
-    paintDash(); paintChips(); paintFmenu(); paintView(VIEW);
+    paintDash(); paintChips(); paintFmenu(); paintPicks();
+    if (!soft) paintView(VIEW);
+    if (SUBKEY) paintSubFoot();
   }
   function paintView(v) {
     if (v === "list" && DIRTY.list) paintList();
@@ -667,7 +781,10 @@
       if (k === "__all__") return resetFilters();
       if (k === "hideFluxym") { F.hideFluxym = true; $("#f-hide-fluxym").checked = true; }
       else if (k === "hideEsker") { F.hideEsker = false; $("#f-hide-esker").checked = false; }
-      else { F[k] = ""; const d = FDEFS.find(x => x[0] === k); if (d) $(d[1]).value = ""; }
+      else if (Array.isArray(F[k])) {
+        F[k] = [];
+        if (subOpen() && SUBKEY === k) paintSubList($("#fsub-q").value);
+      }
       return render();
     }
     const t = e.target.closest("[data-take]");

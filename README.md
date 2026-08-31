@@ -222,7 +222,7 @@ Rien à installer, aucune étape de build.
 
 ### Savoir quelle version est réellement affichée
 
-Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v6`. Ce
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v7`. Ce
 libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
 que la feuille de style chargée est bien la dernière. **Ce numéro doit être
 incrémenté à chaque livraison qui touche `css/app.css`.**
@@ -422,10 +422,10 @@ exactes qu'il trouve dans les pages ; si les deux valeurs divergent, il met en
 cache des fichiers que personne ne demande, et sert au navigateur les anciens.
 Une livraison qui oublie `VERSION` ne changera donc rien sur les téléphones de
 l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
-mardi matin sur un stand. En cas de doute : le marqueur `interface v6` de
+mardi matin sur un stand. En cas de doute : le marqueur `interface v7` de
 l'en-tête dit quelle feuille de style est réellement chargée.
 
-**Version déployée le 31 août : `20260831a`, sur les cinq pages HTML et
+**Version déployée le 31 août : `20260831b`, sur les cinq pages HTML et
 `sw.js`.** La divergence tolérée jusque-là est levée : `login.html`,
 `methode.html`, `compte.html` et `admin.html` étaient restées sur `20260828e`
 alors que `index.html` et `sw.js` étaient passés à `20260830a`. Le repli
@@ -434,9 +434,12 @@ supprimait pas : les URL en `?v=20260828e` n'étant pas dans `SHELL_FILES`,
 elles n'étaient jamais précachées et dépendaient d'une entrée laissée par une
 version antérieure. Les cinq pages portent désormais la même étiquette.
 
-`interface v6` est inchangé, `css/app.css` n'ayant pas été modifié. La
-livraison du 31 août ne touche ni `css/app.css` ni `js/app.js` : l'entonnoir et
-le score vivent entièrement dans `js/gamif.js` et `css/gamif.css`.
+Le marqueur passe à **`interface v7`** : contrairement à `20260831a`, qui
+vivait entièrement dans `js/gamif.js` et `css/gamif.css`, la version
+`20260831b` modifie `css/app.css`, `js/app.js` et `index.html` pour les filtres
+à choix multiple. C'est la seule partie de ce travail qui touche le cœur de
+l'annuaire, et c'est pour ça que le numéro visible bouge : si l'en-tête affiche
+encore `v6`, la feuille de style n'est pas la bonne.
 
 ---
 
@@ -495,6 +498,100 @@ le meilleur moyen de perdre cette note.
 `team.name` en `on update cascade`, les contacts déjà attribués suivent.
 
 ---
+
+## Les filtres à choix multiple
+
+Depuis `20260831b`, **chaque filtre accepte plusieurs valeurs**. La demande
+venait de l'usage : on cherchait « Finance ou Achats », et le choix unique
+obligeait à faire deux passes en retenant de tête le résultat de la première.
+
+### La règle de combinaison
+
+Plusieurs valeurs dans un même filtre s'**additionnent** (OU), deux filtres
+différents se **cumulent** (ET). C'est écrit dans `methode.html` aussi, parce
+que c'est la seule chose à savoir pour lire un résultat sans se tromper, et que
+personne n'ouvrira ce README pendant l'événement.
+
+### Ce qui a changé dans le code
+
+`F` ne porte plus des chaînes mais des **listes** : `F.priority = []` vaut
+« pas de filtre », exactement comme l'ancienne chaîne vide. `match()` teste
+`F[k].length && !F[k].includes(r[k])`, et l'attribution traite
+`r.owner || "__none__"`, pour que « Non attribué » soit une valeur comme une
+autre au lieu d'un cas particulier en deux conditions.
+
+Les sept `<select>` **restent dans `index.html`**, masqués par `hidden`. Ils ne
+portent plus la sélection, seulement les options et leurs libellés, remplis par
+`buildFilters()`. C'est délibéré : un seul endroit définit les intitulés, et
+`optLabel()` va les y chercher pour les pastilles et les boutons. Un
+`<select multiple>` natif aurait imposé le Ctrl+clic, impensable au doigt sur
+un stand, et une hauteur fixe sans recherche.
+
+Une **liste à cocher unique** sert les deux présentations : plein écran sur
+téléphone, où le menu à deux niveaux existait déjà, et fenêtre centrée sur
+ordinateur, où le bouton `.fpick` remplace le menu déroulant. Un seul code à
+maintenir, et la recherche interne devient enfin disponible au clavier sur les
+182 sociétés.
+
+Trois précautions, chacune pour une raison précise :
+
+- **cocher ne repeint pas la grille.** `render(true)` met à jour les compteurs,
+  les pastilles et le bouton « Voir les N résultats », mais saute les cartes ;
+  elles sont peintes à la fermeture du panneau, et seulement si quelque chose a
+  changé. Cocher trois sociétés de suite ne doit pas reconstruire quatre cents
+  cartes trois fois sous les doigts ;
+- **les valeurs disparues sont purgées.** `buildFilters()` retire de `F` les
+  segments, fonctions, séniorités et sociétés absents des données. Sans ça, une
+  société renommée laissait un filtre invisible et une liste vide sans
+  explication. Priorité, statut et attribution ont des options fixes, il n'y a
+  rien à y nettoyer ;
+- **une pastille par filtre, pas par valeur.** Trois sociétés retenues donnent
+  une pastille lisible plutôt que trois pastilles qui poussent le reste hors de
+  l'écran. La croix vide le filtre entier ; pour n'enlever qu'une valeur, on
+  rouvre la liste, qui est à un geste.
+
+Le panneau se ferme par **Terminé**, par Échap, par le fond sur ordinateur, ou
+par **Retour** sur téléphone. Le pied porte le compte de ce qui est retenu et un
+**Tout effacer** : en choix multiple, cocher ne referme plus rien, il faut donc
+toujours voir par où sortir.
+
+## Le portefeuille d'un collègue
+
+Le classement disait qui menait, jamais où en était l'autre. Depuis
+`20260831b`, dans l'onglet *Équipe*, **un nom s'ouvre** : celui du classement
+comme celui du tableau des portefeuilles, au clic comme au clavier.
+
+On y lit la même chose que sur son propre portefeuille : score, position,
+entonnoir cliquable, et les fiches suivies, triées par priorité puis par nom,
+avec l'étape atteinte, les points, le créneau de rendez-vous s'il existe et le
+début des notes sur ordinateur.
+
+### Consultation seule, et pourquoi
+
+Aucun bouton, aucun changement de statut, aucune libération, aucune ouverture
+du volet depuis cette vue. Sur un stand, à une main, entre deux conversations,
+le risque n'est pas de manquer un geste, c'est de **modifier le contact de
+quelqu'un d'autre en croyant regarder**. Pour reprendre un contact, le chemin
+reste l'annuaire, où le propriétaire est affiché sur la fiche et où la reprise
+demande une confirmation.
+
+### Ce que ça coûte
+
+Rien au réseau : tout se calcule sur `fx.rows.v1`, la copie locale déjà
+chargée. La vue s'ouvre aussi vite hors couverture que dessus. Elle se
+rafraîchit avec le cycle de deux secondes de `gamif`, en **conservant la
+position de défilement** : un rafraîchissement ne renvoie pas en haut de liste
+quelqu'un qui lit.
+
+Les lignes de `#team-board` sont peintes par `js/app.js`, qui n'est pas modifié
+pour autant : `markTeam()` y **pose seulement un attribut et une classe** après
+chaque repeinte, en rapprochant le nom lu de la liste des membres actifs. Si la
+structure de `js/app.js` change un jour, le pire qui arrive est que la ligne
+cesse d'être cliquable, jamais qu'elle se casse.
+
+La ligne « Non attribuées » reste volontairement non cliquable : ces 259 fiches
+se prennent depuis l'annuaire, avec le filtre *Attribution*, qui accepte
+désormais « Non attribué » en même temps qu'un propriétaire.
 
 ## L'entonnoir, le score et le QR du concours
 
@@ -558,7 +655,11 @@ sont déjà des cibles dans la vue Équipe.
 ### Comment ça s'accroche sans toucher `js/app.js`
 
 `js/gamif.js` et `css/gamif.css` sont autonomes, chargés en dernier, sur le
-modèle de `js/install.js`. Le script :
+modèle de `js/install.js`. Ils n'enveloppent et ne remplacent aucune fonction
+de `js/app.js` ; la version `20260831b` a bien modifié ce fichier, mais pour
+les filtres, par édition directe, pas depuis `gamif`.
+
+Le script :
 
 - lit la copie locale `fx.rows.v1` qu'entretient déjà `js/app.js`, dont le
   `select("*")` ramène les nouvelles colonnes sans modification ;
@@ -698,8 +799,9 @@ c'est prendre le risque que deux valeurs divergent pour le même filtre.
 | | Ordinateur (> 900px) | Téléphone (≤ 900px) |
 |---|---|---|
 | Recherche | barre collante sous la navigation | idem, plein largeur |
-| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, puis **menu à deux niveaux** : liste des filtres, puis liste des valeurs en plein écran |
-| Choix d'une valeur | menu déroulant natif | liste de lignes de 52px, nombre de fiches par valeur, recherche interne au-delà de 12 options |
+| Filtres | panneau visible en clair, 4 colonnes | feuille remontante, puis **menu à deux niveaux** : liste des filtres, puis liste des valeurs |
+| Choix des valeurs | bouton, puis **liste à cocher en fenêtre centrée** | même liste, en **plein écran**, lignes de 52px |
+| Nombre de valeurs | **plusieurs par filtre**, recherche interne au-delà de 12 options, nombre de fiches par valeur | idem, cases élargies à 24px pour le pouce |
 | Filtres actifs | visibles dans le panneau | rappelés en pastilles supprimables sous la recherche |
 | Vues | onglets en haut | barre basse dans la zone du pouce, avec le compteur du portefeuille |
 | Tableau de bord | six indicateurs dépliés | replié, résumé en une ligne |
@@ -717,10 +819,12 @@ Trois de ces choix viennent d'un essai sur téléphone, pas d'un principe :
   filtrage, et disparaît en dessous de cinq lettres, où il serait trompeur.
   Le saut se cale sous les barres collantes en mesurant leur position réelle.
 - **le menu de filtres à deux niveaux.** Un menu déroulant natif portant 182
-  sociétés se vise dans une roue, sans recherche. Les `<select>` restent la
-  source de vérité, y compris pour l'affichage sur ordinateur ; le menu les
-  double sans dupliquer l'état, donc deux valeurs ne peuvent pas diverger pour
-  le même filtre.
+  sociétés se vise dans une roue, sans recherche. Depuis `20260831b`, la même
+  liste à cocher sert les deux largeurs : sur ordinateur, un bouton l'ouvre en
+  fenêtre centrée, à la place du menu déroulant. Un seul code, un seul état
+  dans `F`, donc deux valeurs ne peuvent pas diverger pour le même filtre. Les
+  `<select>` sont conservés mais masqués : ils ne portent plus que les options
+  et leurs libellés.
 - **la fiche en plein écran.** À 93dvh elle donnait une demi-page, ni panneau
   ni page. Elle occupe maintenant tout l'écran : on l'ouvre, on saisit, on la
   ferme, et on retrouve la liste à l'endroit où on l'avait laissée.

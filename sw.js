@@ -36,7 +36,7 @@
       pas un mardi matin sur un stand.
    -------------------------------------------------------------------------- */
 
-const VERSION = "20260831a";
+const VERSION = "20260831b";
 const SHELL   = "fx-shell-"   + VERSION;   /* pages, styles, scripts, icones */
 const VENDOR  = "fx-vendor-"  + VERSION;   /* polices Google et supabase-js  */
 const PATIENCE = 1200;                     /* ms accordees au reseau         */

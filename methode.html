@@ -6,7 +6,7 @@
 <title>Méthode de priorisation | Stand Esker All Access 2026 — Fluxym</title>
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
-<link rel="stylesheet" href="./css/app.css?v=20260831a">
+<link rel="stylesheet" href="./css/app.css?v=20260831b">
 </head>
 <body>
 <nav id="main-nav"></nav>
@@ -197,15 +197,43 @@
   <p>Si votre système est réglé sur « mouvement réduit », il n'y a aucune
   animation, et le score reste identique.</p>
 
+  <h2 id="voir-portefeuille">Voir le portefeuille d'un collègue</h2>
+  <p>Dans l'onglet <i>Équipe</i>, <b>un nom s'ouvre</b> : celui du classement
+  comme celui du tableau des portefeuilles. On y lit exactement ce que la
+  personne voit de son côté, son score, son entonnoir cliquable et ses fiches,
+  avec ses notes sur ordinateur.</p>
+  <p>C'est une <b>consultation seule</b>, et c'est voulu. Aucun bouton, aucun
+  changement de statut, aucune libération possible depuis cette vue : le risque,
+  sur un stand, n'est pas de manquer un geste, c'est de modifier le contact de
+  quelqu'un d'autre en croyant simplement regarder. Pour reprendre un contact,
+  le chemin reste l'annuaire, où le propriétaire est affiché sur la fiche.</p>
+  <p>Trois usages qui justifient l'écran : savoir <b>si un contact est déjà
+  travaillé et jusqu'où</b> avant d'aborder quelqu'un, <b>reprendre le fil</b>
+  d'un collègue parti déjeuner, et voir <b>ce qui reste en priorité A</b> chez
+  chacun quand une heure creuse se présente.</p>
+
+  <h2>Les filtres acceptent plusieurs valeurs</h2>
+  <p>Chaque filtre est une <b>liste à cocher</b>, pas un choix unique. On peut
+  donc demander « priorité A <i>ou</i> B », ou trois sociétés d'un coup.</p>
+  <p>La règle de lecture, sur laquelle tout repose : plusieurs valeurs dans un
+  même filtre s'<b>additionnent</b>, deux filtres différents se
+  <b>cumulent</b>. « Fonction Finance ou Achats » et « Séniorité Direction »
+  donne les responsables Finance et les responsables Achats, personne d'autre.</p>
+  <p>Cocher ne referme plus la liste : on en coche autant qu'on veut, le
+  compteur du bas suit, et <b>Terminé</b> applique. Le nombre à côté de chaque
+  valeur est le nombre de fiches concernées, ce qui évite d'ouvrir un filtre
+  pour tomber sur zéro résultat. Les pastilles sous la barre de recherche
+  rappellent ce qui est actif, et leur croix vide le filtre entier.</p>
+
   <h2>Priorités déjà corrigées par l'équipe</h2>
   <div id="prio-manuelles"></div>
 </main>
 
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260831a"></script>
-<script src="./js/api.js?v=20260831a"></script>
-<script src="./js/nav.js?v=20260831a"></script>
-<script src="./js/methode.js?v=20260831a"></script>
+<script src="./js/config.js?v=20260831b"></script>
+<script src="./js/api.js?v=20260831b"></script>
+<script src="./js/nav.js?v=20260831b"></script>
+<script src="./js/methode.js?v=20260831b"></script>
 </body>
 </html>

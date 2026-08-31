@@ -230,9 +230,25 @@ body.nav-open .nav-menu{display:block}
 .filters-body{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px 14px;align-items:end}
 .fl{display:flex;flex-direction:column;gap:5px;font-size:10.5px;font-weight:800;text-transform:uppercase;
   letter-spacing:.05em;color:#64748b}
-.fl select{width:100%;min-height:40px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;
-  color:var(--ink);font-weight:500;text-transform:none;letter-spacing:0}
-.fl select:focus{outline:2px solid var(--accent);border-color:transparent}
+/* Le <select> ne sert plus qu'a stocker les options : il est masque par
+   l'attribut hidden, la regle ci-dessous garantit qu'aucune declaration de
+   display ne le fasse reapparaitre. */
+.fl select[hidden]{display:none}
+/* Bouton de filtre. Il a l'air d'un menu deroulant, mais il ouvre la liste a
+   cocher : un filtre accepte plusieurs valeurs, ce qu'un <select> ne sait pas
+   faire sans Ctrl+clic. */
+.fpick{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:8px 11px;
+  border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
+  font-weight:500;font-size:13.5px;text-transform:none;letter-spacing:0;text-align:left}
+.fpick:hover{border-color:#c7d2fe;background:#f8faff}
+.fpick:focus-visible{outline:2px solid var(--accent);border-color:transparent}
+.fpick.set{border-color:var(--accent);background:#eff6ff;color:var(--accent);font-weight:700}
+.fpv{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fpn{font-style:normal;background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+  min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  padding:0 5px;flex:0 0 auto}
+.fpc{width:16px;height:16px;color:#94a3b8;flex:0 0 auto}
+.fpick.set .fpc{color:var(--accent)}
 .fl-wide{grid-column:span 2}   /* les raisons sociales sont longues */
 .fl-switches{display:flex;gap:8px;align-items:center;flex-wrap:wrap;grid-column:span 2}
 .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#334155;background:#fff;
@@ -439,7 +455,41 @@ body.nav-open .nav-menu{display:block}
    filtres, sa sous-feuille et le curseur alphabetique n'existent pas.
    ========================================================================== */
 .fmenu{display:none}
-.fsub{display:none}
+
+/* --------------------------------------------------------------------------
+   DEUXIEME NIVEAU DES FILTRES : LA LISTE DE VALEURS A COCHER
+   Fenetre centree sur ordinateur, ecran plein sur telephone (plus bas). Un
+   seul balisage et un seul code : c'est ce qui rend le choix multiple tenable
+   a huit jours de l'evenement.
+   -------------------------------------------------------------------------- */
+.fsub{position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.45);padding:24px}
+.fsub[hidden]{display:none}
+.fsub-box{display:flex;flex-direction:column;width:min(540px,100%);max-height:min(72vh,640px);
+  background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(15,23,42,.28);overflow:hidden}
+.fsub-head{display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.fsub-head h3{margin:0;font-size:15px}
+.fsub-back{display:none}          /* ordinateur : Termine, Echap ou le fond */
+.fsub-search{padding:10px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.fsub-search input{width:100%;min-height:38px;padding:8px 12px;border:1px solid var(--line);
+  border-radius:9px;background:#f8fafc;font-size:14px}
+.fsub-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 0}
+.fsopt{display:flex;align-items:center;gap:10px;width:100%;min-height:38px;padding:6px 14px;
+  background:none;border:0;text-align:left;font-size:13.5px;color:var(--ink)}
+.fsopt:hover{background:#f1f5f9}
+.fsopt span{flex:1;min-width:0}
+.fsopt em{font-style:normal;color:#94a3b8;font-size:12.5px;font-weight:600;flex:0 0 auto}
+.fsopt.on{color:var(--accent);font-weight:700}
+.fsbox{width:18px;height:18px;flex:0 0 auto;border:1.5px solid #cbd5e1;border-radius:5px;background:#fff;
+  display:flex;align-items:center;justify-content:center}
+.fsbox svg{width:13px;height:13px;stroke:#fff;stroke-width:3;opacity:0}
+.fsopt.on .fsbox{background:var(--accent);border-color:var(--accent)}
+.fsopt.on .fsbox svg{opacity:1}
+.fsub-foot{display:flex;gap:8px;align-items:center;justify-content:flex-end;padding:11px 14px;
+  border-top:1px solid var(--line);flex:0 0 auto}
+.fsub-ok{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 15px;
+  font-size:13.5px;font-weight:700;min-height:40px}
+.fsub-ok:hover{background:#1a44bd}
 
 
 /* Le voile sert desormais aussi de fond a la fiche centree, sur toutes les
@@ -703,7 +753,8 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
   .fl-actions .ghost{min-height:48px;font-size:14px}
 
   /* --- Deuxieme niveau, plein ecran --- */
-  .fsub{display:flex;position:fixed;inset:0;z-index:130;background:#fff;flex-direction:column}
+  .fsub{padding:0;background:#fff;align-items:stretch;justify-content:flex-start}
+  .fsub-box{width:100%;height:100%;max-height:none;border-radius:0;box-shadow:none}
   .fsub-head{display:flex;align-items:center;gap:6px;padding:calc(8px + var(--safe-t)) 12px 10px;
     border-bottom:1px solid var(--line);flex:0 0 auto}
   .fsub-back{display:flex;align-items:center;gap:2px;background:none;border:0;color:var(--accent);
@@ -716,14 +767,21 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
   /* min-height:0 : sans lui, la liste des societes, plus de 300 entrees, ne
      scrolle pas et seul son debut est atteignable. */
   .fsub-list{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    overscroll-behavior:contain;padding:6px 0 calc(14px + var(--safe-b))}
-  .fsopt{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 16px;
+    overscroll-behavior:contain;padding:6px 0}
+  .fsopt{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 16px;
     background:none;border:0;border-bottom:1px solid #f6f8fb;text-align:left;font-size:16px;color:var(--ink)}
   .fsopt:active{background:#f1f5f9}
   .fsopt span{flex:1;min-width:0}
   .fsopt em{font-style:normal;color:#94a3b8;font-size:14px;font-weight:600;flex:0 0 auto}
-  .fsopt svg{width:20px;height:20px;color:var(--accent);flex:0 0 auto}
   .fsopt.on{background:#eff6ff;color:var(--accent);font-weight:700}
+  /* Case a cocher plus large au doigt : c'est la cible du geste. */
+  .fsbox{width:24px;height:24px;border-radius:7px}
+  .fsbox svg{width:17px;height:17px}
+  /* Le pied reste visible, encoche comprise : cocher ne referme plus la
+     liste, il faut donc toujours voir par ou sortir. */
+  .fsub-foot{padding:10px 12px calc(10px + var(--safe-b));gap:10px}
+  .fsub-foot .ghost{flex:0 0 auto;min-height:48px;font-size:14px}
+  .fsub-ok{flex:1;min-height:48px;border-radius:12px;font-size:15px;font-weight:800}
   body.sub-open{overflow:hidden}
 
   /* --- La fiche prend tout l'ecran --- */
@@ -801,4 +859,4 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
    ete perdue le 28 aout a se demander si un deploiement etait passe.
    A incrementer a chaque livraison qui touche css/app.css.
    ========================================================================== */
-.nav-brand span::after{content:" \00b7 interface v6"}
+.nav-brand span::after{content:" \00b7 interface v7"}

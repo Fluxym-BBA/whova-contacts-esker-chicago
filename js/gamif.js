@@ -77,6 +77,8 @@
 
   let ROWS = [];              /* copie de travail, fiches completes  */
   let FILTER = null;          /* cle d'etape filtree, ou null        */
+  let WHO  = null;            /* collegue dont on consulte le portefeuille */
+  let WHOF = null;            /* etape filtree dans cette consultation     */
   let LAST_ID = null;         /* derniere fiche ouverte dans le volet */
   let LAST_FX3 = 0;           /* horodatage du dernier feu d'artifice */
   let PAINT_LOCK = false;     /* evite la boucle observer / repeinte  */
@@ -286,7 +288,9 @@
       <div class="gm-rows">${board.map((x, i) => {
         const p = t.filter(r => r.owner === x.name);
         const fig = STEPS.map(s => p.filter(r => r[s.col]).length).join(" · ");
-        return `<div class="gm-r${x.name === (FX.me && FX.me.name) ? " me" : ""}">
+        return `<div class="gm-r gm-clic${x.name === (FX.me && FX.me.name) ? " me" : ""}"
+          data-who="${esc(x.name)}" role="button" tabindex="0"
+          title="Voir le portefeuille de ${esc(x.name)}">
           <span class="gm-n">${i + 1}</span>
           <span class="gm-dot" style="background:${esc(x.color || "#94a3b8")}"></span>
           <span class="gm-w">${esc(x.name)}</span>
@@ -295,9 +299,198 @@
           <i class="gm-bar"><s style="width:${Math.round(x.score / max * 100)}%;background:${esc(x.color || "#94a3b8")}"></s></i>
         </div>`;
       }).join("")}</div>
-      <p class="gm-note">Points calculés à l’affichage depuis les jalons enregistrés en base.
-        Prendre un contact ne rapporte rien : seuls les gestes comptent.
+      <p class="gm-note">Un nom ouvre le portefeuille de la personne, en consultation seule.
+        Points calculés à l’affichage depuis les jalons enregistrés en base :
+        prendre un contact ne rapporte rien, seuls les gestes comptent.
         <a href="./methode.html#bareme">Voir le barème</a></p>`;
+  }
+
+
+  /* ---------------- Le portefeuille d'un collegue ----------------
+     Demande apparue a l'usage : le classement dit qui mene, jamais ou en est
+     l'autre. Un nom du tableau d'equipe ouvre donc le meme bandeau que le sien,
+     avec le meme entonnoir cliquable et la liste des fiches suivies.
+
+     Lecture seule, decision assumee : aucun bouton d'action, aucune ouverture
+     du volet. Sur un stand, a une main, entre deux conversations, le risque
+     n'est pas de manquer un geste, c'est de changer le statut d'un contact qui
+     n'est pas le sien en croyant consulter. Pour reprendre un contact, le
+     chemin reste celui de l'annuaire, ou le nom du proprietaire est affiche et
+     ou la reprise demande une confirmation.
+
+     Aucune requete reseau : tout se calcule sur la copie locale deja chargee,
+     donc la vue s'ouvre aussi vite hors reseau que dessus. */
+
+  const PRIO_ORD = { A:0, B:1, C:2 };
+
+  const ownerRows = name => targets(ROWS).filter(r => r.owner === name);
+
+  /* Derniere etape franchie, celle qui resume la fiche en un mot. */
+  function stageOf(r) {
+    let last = null;
+    STEPS.forEach(s => { if (r[s.col]) last = s; });
+    return last;
+  }
+
+  function whoKeeps(r) {
+    if (!WHOF) return true;
+    if (WHOF === "todo")  return r.status !== "Sans suite" && !STEPS.some(s => r[s.col]);
+    if (WHOF === "prioA") return r.priority === "A" && !STEPS.some(s => r[s.col]);
+    const s = STEPS.find(x => x.k === WHOF);
+    return s ? !!r[s.col] : true;
+  }
+
+  /* Une fiche, sans aucun controle. Les notes sont la partie la plus utile a
+     un collegue (« deja vu l'an dernier », « rappeler apres 14 h ») et la plus
+     longue : on en montre le debut, l'infobulle porte le reste. */
+  function whoCard(r) {
+    const st = stageOf(r);
+    const pts = scoreOf(r);
+    const dead = r.status === "Sans suite";
+    const cls = dead ? " dead" : st ? " step-" + st.k : "";
+    const note = (r.notes || "").trim();
+    return `<article class="gm-wc${cls}">
+      <div class="gm-wc-h">
+        <span class="gm-wc-av" style="background:${FX.hue(r.full_name)}">${FX.initials(r.full_name)}</span>
+        <div class="gm-wc-id">
+          <b>${esc(r.full_name)}</b>
+          ${r.title ? `<span>${esc(r.title)}</span>` : ""}
+          ${r.company ? `<em>${esc(r.company)}</em>` : ""}
+        </div>
+        <div class="gm-wc-sc">${pts ? `<b>${pts}</b><span>pts</span>` : `<i>—</i>`}</div>
+      </div>
+      <div class="gm-wc-b">
+        ${r.priority ? `<i class="gm-wc-p p${esc(r.priority)}">${esc(r.priority)}</i>` : ""}
+        <i class="gm-wc-st">${dead ? "Sans suite" : st ? esc(st.long) : "À contacter"}</i>
+        ${r.meeting_slot ? `<i class="gm-wc-rdv">RDV ${esc(r.meeting_slot)}</i>` : ""}
+        ${r.contest_at ? `<i class="gm-wc-cc">Concours proposé</i>` : ""}
+      </div>
+      ${note ? `<p class="gm-wc-n" title="${esc(note)}">${esc(note.slice(0, 180))}${note.length > 180 ? "…" : ""}</p>` : ""}
+    </article>`;
+  }
+
+  function whoHtml() {
+    const member = (FX.team || []).find(x => x.name === WHO) || { name: WHO, color: "#94a3b8", role: "" };
+    const list = ownerRows(WHO);
+    const b = boardOf(list);
+    const score = list.reduce((n, r) => n + scoreOf(r), 0);
+    const today = list.reduce((n, r) => n + todayOf(r), 0);
+    const { board, pos } = rankOf(WHO);
+    const prioA = list.filter(r => r.priority === "A" && !STEPS.some(s => r[s.col])).length;
+    const mine = WHO === (FX.me && FX.me.name);
+
+    const shown = list.filter(whoKeeps).sort((a, c) =>
+      (PRIO_ORD[a.priority] == null ? 9 : PRIO_ORD[a.priority]) -
+      (PRIO_ORD[c.priority] == null ? 9 : PRIO_ORD[c.priority]) ||
+      String(a.last_name || a.full_name || "").localeCompare(String(c.last_name || c.full_name || ""), "fr"));
+
+    const seg = (k, n, label) =>
+      `<button class="gm-seg${WHOF === k ? " on" : ""}" type="button" data-wstep="${k}"
+        aria-pressed="${WHOF === k}"><b>${n}</b><span>${label}</span></button>`;
+
+    return `<header class="gm-wh">
+        <button class="gm-wx" type="button" data-wclose="1" aria-label="Fermer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        <span class="gm-wdot" style="background:${esc(member.color || "#94a3b8")}"></span>
+        <div class="gm-wid">
+          <b>${esc(member.name)}${mine ? " · vous" : ""}</b>
+          <span>${esc(member.role || "")}</span>
+        </div>
+        <div class="gm-wsc">
+          <b>${score}</b>
+          <span>points · ${pos ? pos + (pos === 1 ? "er" : "e") + " sur " + board.length : "hors classement"}</span>
+        </div>
+      </header>
+      <div class="gm-wsum">
+        <span class="gm-wtot"><b>${list.length}</b> contact${list.length > 1 ? "s" : ""} suivi${list.length > 1 ? "s" : ""}</span>
+        <span class="gm-wday${today > 0 ? " up" : ""}">${today > 0 ? "+" + today + " aujourd’hui" : "rien aujourd’hui"}</span>
+        ${prioA ? `<span class="gm-wa">${prioA} priorité A sans premier geste</span>`
+                : `<span class="gm-wok">aucune priorité A en attente</span>`}
+      </div>
+      <div class="gm-fn gm-wfn" role="group" aria-label="Entonnoir du portefeuille de ${esc(member.name)}">
+        ${seg("todo", b.todo, "À faire")}
+        ${STEPS.map(s => seg(s.k, b[s.k], s.short)).join("")}
+      </div>
+      <div class="gm-wlist">
+        ${shown.length ? shown.map(whoCard).join("")
+          : `<p class="gm-wempty">${list.length ? "Aucune fiche dans ce filtre." : "Aucun contact attribué pour le moment."}</p>`}
+      </div>
+      <footer class="gm-wf">
+        <span>Consultation seule. Pour reprendre un contact, passez par l’annuaire.</span>
+        <a href="./methode.html#bareme">Barème</a>
+      </footer>`;
+  }
+
+  function whoOverlay() {
+    let o = $("#gm-who");
+    if (o) return o;
+    o = document.createElement("div");
+    o.id = "gm-who";
+    o.className = "gm-who";
+    o.hidden = true;
+    o.innerHTML = '<div class="gm-who-in" role="dialog" aria-modal="true" aria-label="Portefeuille d’un collègue"></div>';
+    o.addEventListener("click", e => {
+      if (e.target === o || (e.target.closest && e.target.closest("[data-wclose]"))) return closeWho();
+      const seg = e.target.closest && e.target.closest("[data-wstep]");
+      if (seg) {
+        const k = seg.dataset.wstep;
+        WHOF = WHOF === k ? null : k;
+        paintWho();
+      }
+    });
+    document.body.appendChild(o);
+    return o;
+  }
+
+  function paintWho() {
+    if (!WHO) return;
+    const o = $("#gm-who");
+    if (!o || o.hidden) return;
+    const box = $(".gm-who-in", o);
+    /* On garde la position de defilement : le rafraichissement de deux
+       secondes ne doit pas renvoyer en haut de liste quelqu'un qui lit. */
+    const top = box.scrollTop;
+    box.innerHTML = whoHtml();
+    box.scrollTop = top;
+  }
+
+  function openWho(name) {
+    if (!name) return;
+    WHO = name; WHOF = null;
+    const o = whoOverlay();
+    o.hidden = false;
+    document.body.classList.add("gm-who-on");
+    paintWho();
+    $(".gm-who-in", o).scrollTop = 0;
+  }
+
+  function closeWho() {
+    const o = $("#gm-who");
+    if (o) o.hidden = true;
+    document.body.classList.remove("gm-who-on");
+    WHO = null; WHOF = null;
+  }
+
+  /* Les lignes du tableau d'equipe sont peintes par app.js, qu'on ne modifie
+     pas. On se contente d'y poser un attribut et une classe apres coup, a
+     chaque repeinte : rien n'est remplace, et si la structure de app.js change
+     un jour, le pire qui arrive est que la ligne cesse d'etre cliquable. */
+  function markTeam() {
+    const board = $("#team-board");
+    if (!board) return;
+    const names = new Set((FX.team || []).filter(x => x.active).map(x => x.name));
+    $$(".tm", board).forEach(tm => {
+      const n = $(".tm-n", tm);
+      const name = n ? n.textContent.trim() : "";
+      if (!names.has(name)) return;          /* la ligne « Non attribuées » */
+      tm.dataset.who = name;
+      tm.classList.add("gm-clic");
+      if (!tm.getAttribute("role")) {
+        tm.setAttribute("role", "button");
+        tm.setAttribute("tabindex", "0");
+        tm.setAttribute("title", "Voir le portefeuille de " + name);
+      }
+    });
   }
 
   /* ---------------- Insertion et repeinte ---------------- */
@@ -323,6 +516,8 @@
       if (vm) { const el = slot("gm-mine", vm, $("#grid-mine")); if (el) el.innerHTML = mineHtml(); }
       const vt = $("#view-team");
       if (vt) { const el = slot("gm-team", vt, $("#team-board")); if (el) { el.classList.add("gm-board"); el.innerHTML = teamHtml(); } }
+      markTeam();
+      paintWho();
       applyFilter();
     } catch (_) { /* jamais au prix de l'annuaire */ }
     PAINT_LOCK = false;
@@ -610,6 +805,12 @@
         setTimeout(() => verify(id, before, null), 800);
       }
 
+      /* Un nom, dans le classement comme dans le tableau d'equipe, ouvre le
+         portefeuille de la personne. On sort tout de suite : rien d'autre ne
+         doit se declencher sur ce clic. */
+      const w = t.closest("[data-who]");
+      if (w && !t.closest("#gm-who")) { openWho(w.dataset.who); return; }
+
       const seg = t.closest("[data-step]");
       if (seg) {
         const k = seg.dataset.step;
@@ -622,13 +823,21 @@
       if (pf) { setPref("discret", !pref().discret); paint(); }
     }, true);
 
-    document.addEventListener("keydown", e => { if (e.key === "Escape") hideQr(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { hideQr(); closeWho(); return; }
+      /* Les lignes portent role="button" : au clavier, Entree et Espace
+         doivent faire ce que fait le clic. */
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const w = e.target && e.target.closest && e.target.closest("[data-who]");
+      if (w && !e.target.closest("#gm-who")) { e.preventDefault(); openWho(w.dataset.who); }
+    });
 
     /* app.js repeint #grid-mine et #team-board sans nous prevenir : on
        reapplique le filtre et on rafraichit les compteurs. */
     const mo = new MutationObserver(() => {
       if (PAINT_LOCK) return;
       applyFilter();
+      markTeam();
       injectDrawer();
     });
     ["#grid-mine", "#team-board", "#drawer"].forEach(s => {

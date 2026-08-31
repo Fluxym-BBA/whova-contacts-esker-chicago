@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stand Esker">
 <title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="manifest" href="./manifest.webmanifest?v=20260831a">
+<link rel="manifest" href="./manifest.webmanifest?v=20260831b">
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="./assets/icon-192.png" sizes="192x192">
 <!-- iOS ignore purement et simplement le manifeste : sans la balise qui suit,
@@ -22,9 +22,9 @@
 <link rel="apple-touch-icon" href="./assets/apple-touch-icon-167.png" sizes="167x167">
 <link rel="apple-touch-icon" href="./assets/apple-touch-icon-152.png" sizes="152x152">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/app.css?v=20260831a">
-<link rel="stylesheet" href="./css/install.css?v=20260831a">
-<link rel="stylesheet" href="./css/gamif.css?v=20260831a">
+<link rel="stylesheet" href="./css/app.css?v=20260831b">
+<link rel="stylesheet" href="./css/install.css?v=20260831b">
+<link rel="stylesheet" href="./css/gamif.css?v=20260831b">
 </head>
 <body class="app">
 <div class="veil">Chargement de l'annuaire…</div>
@@ -72,33 +72,68 @@
   </header>
 
   <div class="filters-body">
-    <!-- Telephone : lignes de menu, un niveau par filtre. Les <select> plus bas
-         restent la source de verite (valeurs et options) mais sont masques ;
-         aucun etat n'est duplique. Ordinateur : l'inverse, ce menu est masque. -->
+    <!-- Telephone : lignes de menu, un niveau par filtre. Ordinateur : ce menu
+         est masque et remplace par la grille de boutons ci-dessous. Les deux
+         ouvrent la meme liste de valeurs a cocher, et lisent le meme etat. -->
     <div class="fmenu" id="fmenu"></div>
 
-    <label class="fl"><span>Priorité</span>
-      <select id="f-priority">
+    <!-- Chaque filtre accepte plusieurs valeurs. Le <select> est conserve mais
+         masque : il porte les options et leurs libelles, remplis par
+         js/app.js, et sert de reference unique pour les intitules. La
+         selection, elle, vit dans l'objet F et se fait dans la liste a cocher
+         du deuxieme niveau, identique sur telephone et sur ordinateur. Un
+         <select multiple> natif aurait impose le Ctrl+clic, impensable au
+         doigt entre deux conversations. -->
+    <div class="fl"><span>Priorité</span>
+      <button class="fpick" type="button" data-fkey="priority" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Toutes</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-priority" hidden aria-hidden="true" tabindex="-1">
         <option value="">Toutes</option>
         <option value="A">A — à voir absolument</option>
         <option value="B">B — à voir si possible</option>
         <option value="C">C — opportuniste</option>
-      </select></label>
-    <label class="fl"><span>Attribution</span>
-      <select id="f-owner">
+      </select></div>
+    <div class="fl"><span>Attribution</span>
+      <button class="fpick" type="button" data-fkey="owner" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Tous</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-owner" hidden aria-hidden="true" tabindex="-1">
         <option value="">Tous</option>
         <option value="__none__">Non attribué</option>
-      </select></label>
-    <label class="fl"><span>Statut</span>
-      <select id="f-status"><option value="">Tous</option></select></label>
-    <label class="fl"><span>Fonction</span>
-      <select id="f-function"><option value="">Toutes</option></select></label>
-    <label class="fl"><span>Séniorité</span>
-      <select id="f-seniority"><option value="">Toutes</option></select></label>
-    <label class="fl"><span>Segment</span>
-      <select id="f-segment"><option value="">Tous</option></select></label>
-    <label class="fl fl-wide"><span>Société</span>
-      <select id="f-company"><option value="">Toutes</option></select></label>
+      </select></div>
+    <div class="fl"><span>Statut</span>
+      <button class="fpick" type="button" data-fkey="status" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Tous</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-status" hidden aria-hidden="true" tabindex="-1"><option value="">Tous</option></select></div>
+    <div class="fl"><span>Fonction</span>
+      <button class="fpick" type="button" data-fkey="job_function" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Toutes</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-function" hidden aria-hidden="true" tabindex="-1"><option value="">Toutes</option></select></div>
+    <div class="fl"><span>Séniorité</span>
+      <button class="fpick" type="button" data-fkey="seniority" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Toutes</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-seniority" hidden aria-hidden="true" tabindex="-1"><option value="">Toutes</option></select></div>
+    <div class="fl"><span>Segment</span>
+      <button class="fpick" type="button" data-fkey="segment" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Tous</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-segment" hidden aria-hidden="true" tabindex="-1"><option value="">Tous</option></select></div>
+    <div class="fl fl-wide"><span>Société</span>
+      <button class="fpick" type="button" data-fkey="company" aria-haspopup="dialog" aria-expanded="false">
+        <span class="fpv">Toutes</span><i class="fpn" hidden>0</i>
+        <svg class="fpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <select id="f-company" hidden aria-hidden="true" tabindex="-1"><option value="">Toutes</option></select></div>
 
     <div class="fl-switches">
       <label class="chk"><input type="checkbox" id="f-hide-fluxym" checked> <span>Masquer Fluxym</span></label>
@@ -115,19 +150,28 @@
     <button class="sheet-cta" id="filters-apply" type="button">Voir les résultats</button>
   </footer>
 
-  <!-- Deuxieme niveau : la liste des valeurs, en plein ecran. Un choix parmi
-       182 societes dans un menu deroulant natif est inutilisable au pouce. -->
+  <!-- Deuxieme niveau : la liste des valeurs, a cocher. Plein ecran sur
+       telephone, fenetre centree sur ordinateur, meme balisage et meme code.
+       Un choix parmi 182 societes dans un menu deroulant natif est
+       inutilisable au pouce, et cocher plusieurs valeurs ne referme rien :
+       d'ou le pied avec un compte de ce qui est retenu. -->
   <div class="fsub" id="fsub" hidden>
-    <header class="fsub-head">
-      <button class="fsub-back" id="fsub-back" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Retour</button>
-      <h3 id="fsub-title"></h3>
-    </header>
-    <div class="fsub-search" id="fsub-search" hidden>
-      <input type="search" id="fsub-q" placeholder="Rechercher…" autocomplete="off"
-             autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher une valeur">
+    <div class="fsub-box" role="dialog" aria-modal="true" aria-labelledby="fsub-title">
+      <header class="fsub-head">
+        <button class="fsub-back" id="fsub-back" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Retour</button>
+        <h3 id="fsub-title"></h3>
+      </header>
+      <div class="fsub-search" id="fsub-search" hidden>
+        <input type="search" id="fsub-q" placeholder="Rechercher…" autocomplete="off"
+               autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher une valeur">
+      </div>
+      <div class="fsub-list" id="fsub-list"></div>
+      <footer class="fsub-foot">
+        <button class="ghost" id="fsub-clear" type="button" hidden>Tout effacer</button>
+        <button class="fsub-ok" id="fsub-done" type="button">Terminé</button>
+      </footer>
     </div>
-    <div class="fsub-list" id="fsub-list"></div>
   </div>
 </section>
 
@@ -202,18 +246,18 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260831a"></script>
-<script src="./js/api.js?v=20260831a"></script>
-<script src="./js/nav.js?v=20260831a"></script>
-<script src="./js/app.js?v=20260831a"></script>
+<script src="./js/config.js?v=20260831b"></script>
+<script src="./js/api.js?v=20260831b"></script>
+<script src="./js/nav.js?v=20260831b"></script>
+<script src="./js/app.js?v=20260831b"></script>
 <!-- Bouton et fiche « Installer l'annuaire ». Charge en dernier, sans
      dependance a FX : tout son balisage est cree par le script, donc cette
      page ne porte que la ligne de style et celle-ci. -->
-<script src="./js/install.js?v=20260831a"></script>
+<script src="./js/install.js?v=20260831b"></script>
 
 <!-- Entonnoir, score et celebrations. Charge en dernier, apres app.js dont il
      lit la copie locale des fiches. Il n'enveloppe aucune fonction de app.js :
      s'il echoue, l'annuaire reste exactement ce qu'il etait. -->
-<script src="./js/gamif.js?v=20260831a"></script>
+<script src="./js/gamif.js?v=20260831b"></script>
 </body>
 </html>
