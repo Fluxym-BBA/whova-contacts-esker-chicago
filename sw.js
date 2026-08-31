@@ -36,7 +36,7 @@
       pas un mardi matin sur un stand.
    -------------------------------------------------------------------------- */
 
-const VERSION = "20260831b";
+const VERSION = "20260831c";
 const SHELL   = "fx-shell-"   + VERSION;   /* pages, styles, scripts, icones */
 const VENDOR  = "fx-vendor-"  + VERSION;   /* polices Google et supabase-js  */
 const PATIENCE = 1200;                     /* ms accordees au reseau         */
@@ -55,6 +55,11 @@ const SHELL_FILES = [
   "./js/api.js?v=" + VERSION,
   "./js/nav.js?v=" + VERSION,
   "./js/app.js?v=" + VERSION,
+  /* score.js porte le calcul du score : sans lui en cache, l'annuaire hors
+     reseau afficherait des cartes sans points. bareme.html, js/bareme.js et
+     css/bareme.css sont en revanche absents volontairement, comme admin.html :
+     on ne regle pas un bareme entre deux conversations sur un stand. */
+  "./js/score.js?v=" + VERSION,
   "./js/methode.js?v=" + VERSION,
   "./js/login.js?v=" + VERSION,
   "./js/compte.js?v=" + VERSION,

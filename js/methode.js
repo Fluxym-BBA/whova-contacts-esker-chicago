@@ -71,7 +71,11 @@
       </table>
       <p class="mut">Seuils actuels : ${fx2} points pour le halo, ${fx3} pour les
       confettis. Barème et seuils sont modifiables par le propriétaire de
-      l'application, et ces valeurs sont celles réellement appliquées.</p>`;
+      l'application, et ces valeurs sont celles réellement appliquées.${
+        FX.me && FX.me.is_owner
+          ? ` <a href="./bareme.html" class="lnk">Régler le barème</a>, avec le
+              classement recalculé avant enregistrement.`
+          : ""}</p>`;
   }
 
   const man = rows.filter(r => r.priority_manual)

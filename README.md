@@ -17,8 +17,9 @@ GitHub Pages (ce repo, statique)     Supabase — fluxym-esker-allaccess-2026
 │ index.html   js/app.js    │ ─────► │ attendees participants + suivi       │
 │ compte.html  js/compte.js │  REST  │ team      comptes et niveaux d'accès │
 │ admin.html   js/admin.js  │        │ activity_log  traçabilité            │
-│ js/api.js    js/nav.js    │        │ score_rules   barème de points       │
-│ js/gamif.js  css/gamif.css│        │ score_settings seuils des effets     │
+│ bareme.html  js/bareme.js │        │ score_rules   barème de points       │
+│ js/api.js    js/nav.js    │        │ score_settings seuils des effets     │
+│ js/score.js  js/gamif.js  │        │                                      │
 │ css/app.css               │        │ RLS       is_fluxym() / is_owner()   │
 │                           │        ├──────────────────────────────────────┤
 │ sw.js  manifest.webmanif. │        │                                      │
@@ -91,7 +92,10 @@ forgerait un appel direct reçoit un `403`.
 tables : `select` conditionné à `is_fluxym()`, `update` à `is_owner()`. Aucune
 policy d'`insert` ni de `delete`, volontairement : les clés du barème sont
 fixes et la ligne unique de `score_settings` ne doit pas pouvoir disparaître.
-`anon` n'a aucun droit dessus. Le trigger `stamp_funnel`, comme les autres
+`anon` n'a aucun droit dessus. C'est cette RLS, et elle seule, qui protège le
+barème : `bareme.html` écrit directement avec la clé anon, sans Edge Function.
+La page renvoie un membre à l'annuaire par politesse, la base le refuserait de
+toute façon. Le trigger `stamp_funnel`, comme les autres
 fonctions internes, a son droit d'exécution révoqué pour `anon`,
 `authenticated` et `public`.
 
@@ -172,6 +176,7 @@ combien de contacts redeviendront libres.
 ├── methode.html                  js/methode.js  méthode de priorisation
 ├── compte.html                   js/compte.js   profil et mot de passe
 ├── admin.html                    js/admin.js    gestion des comptes
+├── bareme.html                   js/bareme.js   réglage du barème, propriétaire seul
 ├── diag.html                     diagnostic : ce que la feuille de style applique
 ├── ecran.html                    diagnostic : ce que l'appareil déclare
 ├── manifest.webmanifest          installation sur l'écran d'accueil (voir « Sur téléphone »)
@@ -179,12 +184,14 @@ combien de contacts redeviendront libres.
 ├── css/
 │   ├── app.css                   feuille unique, partagée par toutes les pages
 │   ├── install.css               boutons et fiche « Installer » (voir « Sur téléphone »)
-│   └── gamif.css                 entonnoir, score, célébrations, QR du concours
+│   ├── gamif.css                 entonnoir, score, célébrations, QR du concours
+│   └── bareme.css                écran de réglage du barème
 ├── js/
 │   ├── config.js                 URL + clé anon
 │   ├── api.js                    client, garde d'authentification, appels admin
 │   ├── nav.js                    navigation partagée
 │   ├── install.js                installation sur l'écran d'accueil
+│   ├── score.js                  LE calcul du score, partagé annuaire / barème
 │   └── gamif.js                  entonnoir, score, célébrations, QR du concours
 ├── assets/
 │   ├── favicon.ico               onglet de navigateur, 16/32/48/64
@@ -425,7 +432,7 @@ l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
 mardi matin sur un stand. En cas de doute : le marqueur `interface v7` de
 l'en-tête dit quelle feuille de style est réellement chargée.
 
-**Version déployée le 31 août : `20260831b`, sur les cinq pages HTML et
+**Version déployée le 31 août : `20260831c`, sur les six pages HTML et
 `sw.js`.** La divergence tolérée jusque-là est levée : `login.html`,
 `methode.html`, `compte.html` et `admin.html` étaient restées sur `20260828e`
 alors que `index.html` et `sw.js` étaient passés à `20260830a`. Le repli
@@ -435,11 +442,26 @@ elles n'étaient jamais précachées et dépendaient d'une entrée laissée par 
 version antérieure. Les cinq pages portent désormais la même étiquette.
 
 Le marqueur passe à **`interface v7`** : contrairement à `20260831a`, qui
-vivait entièrement dans `js/gamif.js` et `css/gamif.css`, la version
-`20260831b` modifie `css/app.css`, `js/app.js` et `index.html` pour les filtres
-à choix multiple. C'est la seule partie de ce travail qui touche le cœur de
-l'annuaire, et c'est pour ça que le numéro visible bouge : si l'en-tête affiche
-encore `v6`, la feuille de style n'est pas la bonne.
+vivait entièrement dans `js/gamif.js` et `css/gamif.css`, les versions
+`20260831b` et `20260831c` modifient `css/app.css`, `js/app.js` et
+`index.html`, pour les filtres à choix multiple. C'est la seule partie de ce
+travail qui touche le cœur de l'annuaire, et c'est pour ça que le numéro visible
+bouge : si l'en-tête affiche encore `v6`, la feuille de style n'est pas la
+bonne.
+
+Ce que chaque étape du 31 août a apporté :
+
+- `20260831a` : entonnoir, score, célébrations, QR du concours ;
+- `20260831b` : filtres à choix multiple, portefeuille d'un collègue en
+  consultation ;
+- `20260831c` : écran de réglage du barème, et extraction du calcul du score
+  dans `js/score.js`.
+
+`bareme.html` est la **sixième page**. Comme `admin.html`, elle n'est
+volontairement **pas dans `SHELL_FILES`** : on ne règle pas un barème entre deux
+conversations sur un stand, et la coquille en cache doit rester légère.
+`js/score.js`, lui, y est : sans lui, l'annuaire hors réseau afficherait des
+cartes sans points.
 
 ---
 
@@ -447,11 +469,12 @@ encore `v6`, la feuille de style n'est pas la bonne.
 
 | Onglet | Rôle |
 |---|---|
-| **Annuaire** | tous les participants, filtrables par priorité, segment, fonction, séniorité, société, statut, attribution |
+| **Annuaire** | tous les participants, filtrables par priorité, segment, fonction, séniorité, société, statut, attribution, **plusieurs valeurs par filtre** |
 | **Mon portefeuille** | uniquement mes contacts |
-| **Répartition équipe** | qui a combien, avancement, reste à répartir |
+| **Répartition équipe** | qui a combien, avancement, reste à répartir ; **un nom ouvre son portefeuille** en consultation |
 | **Journal** | historique horodaté des prises et changements de statut |
-| **Méthode** | comment la priorité A/B/C est calculée, et qui l'a corrigée |
+| **Méthode** | comment la priorité A/B/C est calculée, qui l'a corrigée, et le barème en vigueur |
+| **Barème** | propriétaire seul : ce que rapporte chaque geste, avec le classement recalculé avant enregistrement |
 
 **Classement alphabétique par nom de famille.** Comme dans Whova, les cartes
 sont regroupées sous un intertitre par initiale, avec le nombre de personnes
@@ -633,9 +656,9 @@ seuils de célébration). Le score se **recalcule à chaque affichage** depuis l
 jalons : changer un poids renote toute l'équipe instantanément, sans migration
 de données, sans risque d'échec à mi-chemin et sans réécrire d'historique.
 
-Il n'existe **aucune interface de réglage pour l'instant** : le barème se
-modifie en SQL. La page réservée au propriétaire est prévue mais n'est pas
-livrée, et elle passe après ce qui sert sur le stand.
+Le barème se règle depuis `bareme.html`, page réservée au propriétaire et
+décrite plus bas (« Régler le barème »). Le SQL direct reste possible, il n'est
+plus nécessaire.
 
 `js/methode.js` lit ces deux tables pour afficher le barème réellement
 appliqué. Écrire les points en dur dans `methode.html` en aurait fait une
@@ -714,6 +737,98 @@ Limite assumée : une image unique ne dit pas **qui** l'a fait scanner. La case
 attribution réelle demanderait un QR par membre, donc une génération côté
 client, donc un encodeur QR en vanilla, qui servirait aussi à la vCard. Ce
 n'est pas fait.
+
+## Le calcul du score, dans un seul fichier
+
+Le calcul vivait dans `js/gamif.js`. Il en est sorti le 31 août, dans
+`js/score.js`, parce que l'écran de réglage doit montrer le classement recalculé
+**avant** enregistrement. Un aperçu avec sa propre formule aurait été pire que
+pas d'aperçu du tout : il annoncerait un classement, l'annuaire en afficherait
+un autre, et personne ne saurait lequel croire un mardi matin sur un stand.
+
+`js/score.js` ne touche pas au DOM et ne dépend pas de `FX` : `load()` reçoit le
+client Supabase en paramètre. Il peut donc être chargé dans n'importe quel
+ordre, et surtout **testé hors navigateur**, ce qui a servi à vérifier
+l'extraction.
+
+La fonction centrale est `detailWith(fiche, barème)`. Le barème est un
+**paramètre**, et c'est tout l'intérêt : l'annuaire passe celui qui est
+enregistré, l'écran de réglage passe celui qui est en train d'être saisi, et les
+deux suivent exactement la même règle.
+
+`js/gamif.js` n'a pas été réécrit pour autant : il prend des **alias locaux**
+(`const STEPS = S.STEPS`, `const RULES = S.rules`) et le reste du fichier est
+inchangé. Deux conséquences à connaître avant d'y toucher :
+
+- `S.rules` et `S.labels` ne sont **jamais réaffectés**, seulement complétés par
+  `Object.assign`. Une réaffectation casserait les alias ;
+- les seuils `S.fx2` et `S.fx3` sont au contraire lus **à chaud** dans le code
+  des célébrations. Un alias local aurait figé la valeur de secours avant que le
+  barème ne revienne de la base.
+
+L'extraction a été validée par comparaison sur les 497 fiches réelles : scores
+identiques au point près, par membre, entre l'ancienne et la nouvelle voie.
+
+## Régler le barème
+
+`bareme.html` est réservé au propriétaire. La page ne protège rien par
+elle-même : la barrière est en base, où `score_rules_write` et
+`score_settings_write` n'autorisent l'`UPDATE` qu'à `is_owner()`. Un membre qui
+arrive par l'URL est renvoyé à l'annuaire, et s'il forçait la requête, la base
+la refuserait. C'est pour cette raison qu'aucune Edge Function n'est nécessaire
+ici : le front écrit directement avec la clé anon, et la RLS tranche.
+
+### On règle des valeurs, pas une liste
+
+Les huit clés sont définies dans `js/score.js`, et la base n'a volontairement
+**aucune politique `INSERT` ni `DELETE`** sur `score_rules`. Ajouter une règle
+depuis cet écran ne servirait à rien : personne ne la calculerait. Les libellés
+ne sont pas modifiables non plus, ils décrivent des gestes définis dans le code,
+et les renommer ne ferait que désynchroniser l'écran et la réalité.
+
+### Trois choses que l'écran affiche, et pourquoi
+
+- **le nombre de fiches concernées par chaque règle.** Sans ce compte, on règle
+  à l'aveugle : monter *Rencontré* de 20 à 25 ne change rien tant qu'aucune
+  rencontre n'est enregistrée, et il vaut mieux le savoir avant de croire avoir
+  agi. Le compte est obtenu en demandant le score de la fiche avec un barème où
+  cette seule clé vaut 1, ce qui évite de réécrire la moindre condition ;
+- **le classement recalculé**, avec l'écart de points et le changement de
+  position pour chacun. Rien n'est écrit avant validation ;
+- **un avertissement pendant les trois jours du salon**, du 8 au 10 septembre.
+  Rien n'est bloqué : un changement le 8 à midi modifierait le classement sur
+  tous les téléphones au rafraîchissement suivant, et c'est au propriétaire de
+  décider. L'écran le dit, il ne l'empêche pas.
+
+### Ce qui se passe à l'enregistrement
+
+Seules les lignes modifiées sont écrites. Chaque écriture est **relue ensuite**
+et comparée à ce qu'on voulait écrire : la RLS peut refuser une ligne, et un
+barème à moitié enregistré serait pire qu'un refus franc. Le cache local du
+barème est mis à jour dans le même mouvement, sans quoi cet appareil
+continuerait à calculer avec l'ancien hors réseau.
+
+Deux points à connaître, à ne pas découvrir sur place :
+
+- `updated_at` et `updated_by` sont envoyés par le front, sans trigger sur ces
+  deux tables, et c'est un choix assumé. La seule politique d'écriture de
+  `score_rules` et de `score_settings` est un `UPDATE` conditionné à
+  `is_owner()`, sans `INSERT` ni `DELETE` : personne d'autre que le
+  propriétaire ne peut toucher au barème, il n'y a donc rien à auditer. La
+  ligne « Dernière modification » n'est pas une piste d'audit, c'est un repère
+  pour le propriétaire lui-même : savoir si le barème a bougé pendant
+  l'événement, et donc à partir de quand un classement affiché sur un
+  téléphone peut être périmé. Un trigger pour figer ces deux colonnes côté
+  base a été proposé, puis écarté pour cette raison ;
+- le classement des autres appareils ne change qu'au **rafraîchissement
+  suivant**, pas instantanément. Le barème est relu au chargement de la page.
+
+### Le bouton « Valeurs d'origine »
+
+Il remplit les champs sans rien écrire : c'est une proposition, pas un
+enregistrement. Les valeurs sont celles de la migration initiale, gardées dans
+`js/score.js` comme valeurs de secours, et elles servent au même titre quand la
+table est injoignable et qu'aucun cache local n'existe.
 
 ## Répartition des portefeuilles
 

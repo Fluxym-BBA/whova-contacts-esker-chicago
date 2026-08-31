@@ -19,6 +19,11 @@ window.renderNav = function (active) {
     ["index.html",   "Annuaire",       true],
     ["methode.html", "Méthode",        true],
     ["compte.html",  "Mon compte",     true],
+    /* Reserves au proprietaire. Le bareme est separe de l'administration a
+       dessein : administrer, c'est ouvrir et fermer des comptes ; regler le
+       bareme, c'est changer le classement de toute l'equipe. Deux gestes de
+       nature differente, deux ecrans. */
+    ["bareme.html",  "Barème",         !!me.is_owner],
     ["admin.html",   "Administration", !!me.is_owner]
   ].filter(l => l[2]);
 

@@ -41,6 +41,11 @@ button,input,select,textarea{font-family:inherit;font-size:14px}
 input,select,textarea{font-size:var(--fs-field)}
 button{cursor:pointer}
 a{color:inherit;text-decoration:none}
+/* Lien visible dans un paragraphe de texte courant. Le style global des liens
+   est neutre (couleur heritee), il faut donc une classe pour les rares liens
+   qui doivent se voir comme tels. */
+.lnk{color:var(--accent);font-weight:700}
+.lnk:hover{text-decoration:underline}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}

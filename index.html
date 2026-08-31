@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stand Esker">
 <title>Annuaire | Stand Esker All Access 2026 — Fluxym</title>
-<link rel="manifest" href="./manifest.webmanifest?v=20260831b">
+<link rel="manifest" href="./manifest.webmanifest?v=20260831c">
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="./assets/icon-192.png" sizes="192x192">
 <!-- iOS ignore purement et simplement le manifeste : sans la balise qui suit,
@@ -22,9 +22,9 @@
 <link rel="apple-touch-icon" href="./assets/apple-touch-icon-167.png" sizes="167x167">
 <link rel="apple-touch-icon" href="./assets/apple-touch-icon-152.png" sizes="152x152">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/app.css?v=20260831b">
-<link rel="stylesheet" href="./css/install.css?v=20260831b">
-<link rel="stylesheet" href="./css/gamif.css?v=20260831b">
+<link rel="stylesheet" href="./css/app.css?v=20260831c">
+<link rel="stylesheet" href="./css/install.css?v=20260831c">
+<link rel="stylesheet" href="./css/gamif.css?v=20260831c">
 </head>
 <body class="app">
 <div class="veil">Chargement de l'annuaire…</div>
@@ -246,18 +246,24 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260831b"></script>
-<script src="./js/api.js?v=20260831b"></script>
-<script src="./js/nav.js?v=20260831b"></script>
-<script src="./js/app.js?v=20260831b"></script>
+<script src="./js/config.js?v=20260831c"></script>
+<script src="./js/api.js?v=20260831c"></script>
+<script src="./js/nav.js?v=20260831c"></script>
+<script src="./js/app.js?v=20260831c"></script>
 <!-- Bouton et fiche « Installer l'annuaire ». Charge en dernier, sans
      dependance a FX : tout son balisage est cree par le script, donc cette
      page ne porte que la ligne de style et celle-ci. -->
-<script src="./js/install.js?v=20260831b"></script>
+<script src="./js/install.js?v=20260831c"></script>
+
+<!-- Le calcul du score, partage avec bareme.html. Charge avant gamif.js, qui
+     en prend des alias. Une seule definition de la formule : un apercu de
+     bareme qui aurait la sienne annoncerait un classement que l'annuaire
+     contredirait. -->
+<script src="./js/score.js?v=20260831c"></script>
 
 <!-- Entonnoir, score et celebrations. Charge en dernier, apres app.js dont il
      lit la copie locale des fiches. Il n'enveloppe aucune fonction de app.js :
      s'il echoue, l'annuaire reste exactement ce qu'il etait. -->
-<script src="./js/gamif.js?v=20260831b"></script>
+<script src="./js/gamif.js?v=20260831c"></script>
 </body>
 </html>

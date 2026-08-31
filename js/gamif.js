@@ -41,39 +41,28 @@
 
   /* ---------------- Constantes ---------------- */
 
-  const SEG_FLUXYM = "Fluxym (nous)";
+  /* Le calcul du score et le bareme vivent dans js/score.js, charge juste
+     avant. Une seule definition sert l'annuaire et l'ecran de reglage : un
+     apercu qui aurait sa propre formule annoncerait un classement que
+     l'annuaire contredirait. Les noms ci-dessous sont des alias locaux, pour
+     ne pas reecrire le reste du fichier. */
+  const S = window.FXSCORE;
+
+  const SEG_FLUXYM = S.SEG_FLUXYM;
   const ROWS_K  = "fx.rows.v1";          /* copie locale ecrite par app.js   */
   const PREF_K  = "fx.gamif.pref.v1";    /* preferences locales, par appareil */
-  const RULES_K = "fx.gamif.rules.v1";   /* bareme en cache, pour le hors reseau */
 
   /* Le QR est une image du depot, pas un appel reseau : il doit s'afficher
      quand le wifi du salon s'ecroule, ce qui arrivera. */
   const QR_SRC = "./assets/qr-concours.png";
   const QR_URL = "https://go.fluxym.com/en/esker_all_access_consulting";
 
-  /* Les quatre etapes de l'entonnoir, dans l'ordre. `col` est le jalon en
-     base, `st` le statut qui le declenche. */
-  const STEPS = [
-    { k:"msg",     col:"funnel_msg_at",     st:"Message envoye", short:"Message",   long:"Message envoyé" },
-    { k:"replied", col:"funnel_replied_at", st:"Repondu",        short:"Réponse",   long:"Réponse obtenue" },
-    { k:"rdv",     col:"funnel_rdv_at",     st:"RDV planifie",   short:"RDV",       long:"Rendez-vous planifié" },
-    { k:"met",     col:"funnel_met_at",     st:"Rencontre",      short:"Rencontré", long:"Rencontré au stand" }
-  ];
-
-  /* Valeurs de secours, utilisees seulement si la table score_rules est
-     injoignable et qu'aucun cache local n'existe. Elles doivent rester
-     identiques a celles inserees par la migration, sinon deux appareils
-     afficheraient deux scores differents. */
-  const DEF_RULES = { msg:3, replied:6, rdv:12, met:20, full:10, prio_a:5, dead:1, contest:5 };
-  const DEF_LABEL = {
-    msg:"Message envoyé", replied:"Réponse obtenue", rdv:"Rendez-vous planifié",
-    met:"Rencontré au stand", full:"Parcours complet dans l'ordre",
-    prio_a:"Contact priorité A travaillé", dead:"Sans suite qualifié", contest:"Concours proposé"
-  };
-
-  let RULES  = Object.assign({}, DEF_RULES);
-  let LABELS = Object.assign({}, DEF_LABEL);
-  let FX2 = 5, FX3 = 16;      /* seuils des paliers de celebration */
+  /* Les quatre etapes de l'entonnoir, le bareme et ses libelles : memes
+     objets que dans js/score.js, jamais recopies. S.rules et S.labels sont
+     completes sur place par S.load(), donc ces alias restent valides. */
+  const STEPS  = S.STEPS;
+  const RULES  = S.rules;
+  const LABELS = S.labels;
 
   let ROWS = [];              /* copie de travail, fiches completes  */
   let FILTER = null;          /* cle d'etape filtree, ou null        */
@@ -99,81 +88,20 @@
     try { localStorage.setItem(PREF_K, JSON.stringify(p)); } catch (_) {}
   }
 
-  const isToday = iso => {
-    if (!iso) return false;
-    const d = new Date(iso), n = new Date();
-    return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
-  };
+  const isToday = S.isToday;
 
-  /* ---------------- Le bareme ----------------
-     Lu une fois au demarrage, puis garde en cache local. Si la lecture
-     echoue, on garde le cache : afficher un score legerement date vaut mieux
-     que ne rien afficher entre deux conversations sur le stand. */
-
-  async function loadRules() {
-    try {
-      const c = JSON.parse(localStorage.getItem(RULES_K) || "null");
-      if (c && c.rules) { RULES = c.rules; LABELS = c.labels || LABELS; FX2 = c.fx2; FX3 = c.fx3; }
-    } catch (_) {}
-
-    try {
-      const r = await FX.sb.from("score_rules").select("key,label,points");
-      const s = await FX.sb.from("score_settings").select("fx2,fx3").limit(1);
-      if (r.error || !r.data || !r.data.length) return;
-
-      const rules = {}, labels = {};
-      r.data.forEach(x => { rules[x.key] = x.points; labels[x.key] = x.label; });
-      RULES = Object.assign({}, DEF_RULES, rules);
-      LABELS = Object.assign({}, DEF_LABEL, labels);
-      if (!s.error && s.data && s.data[0]) { FX2 = s.data[0].fx2; FX3 = s.data[0].fx3; }
-      try { localStorage.setItem(RULES_K, JSON.stringify({ rules:RULES, labels:LABELS, fx2:FX2, fx3:FX3 })); } catch (_) {}
-    } catch (_) { /* hors reseau : le cache ou les valeurs de secours suffisent */ }
-  }
+  /* Le bareme est lu par js/score.js, qui garde aussi le cache local. */
+  const loadRules = () => S.load(FX.sb);
 
   /* ---------------- Le score d'une fiche ----------------
-     Une seule definition, utilisee pour le total, pour le classement et pour
-     calculer les points d'un geste. Deux calculs separes finiraient par
-     divergerpour de bon. */
+     La formule est dans js/score.js. Ici, seulement des alias : le total, le
+     classement et les points d'un geste passent tous par la meme fonction,
+     et l'ecran de reglage du bareme aussi. */
 
-  function detailOf(r) {
-    const parts = [];
-    let total = 0;
-    const add = (k, n) => { if (n) { total += n; parts.push({ k, label: LABELS[k], points: n }); } };
+  const detailOf = S.detailOf;
+  const scoreOf  = S.scoreOf;
+  const todayOf  = S.todayOf;
 
-    STEPS.forEach(s => { if (r[s.col]) add(s.k, RULES[s.k] || 0); });
-
-    /* Parcours complet : les quatre jalons, et dans l'ordre. Un contact
-       travaille etape par etape vaut plus qu'un contact classe directement
-       « Rencontré », c'est tout l'objet de l'entonnoir. */
-    if (STEPS.every(s => r[s.col])) {
-      const t = STEPS.map(s => +new Date(r[s.col]));
-      if (t[0] <= t[1] && t[1] <= t[2] && t[2] <= t[3]) add("full", RULES.full || 0);
-    }
-
-    /* Le bonus priorite A tombe des la premiere etape franchie : il
-       recompense le fait de travailler les bons contacts maintenant, pas
-       seulement d'avoir de la chance sur le stand. */
-    if (r.priority === "A" && STEPS.some(s => r[s.col])) add("prio_a", RULES.prio_a || 0);
-
-    /* Qualifier negativement est un vrai travail. Sans point, personne ne met
-       « Sans suite » et les fiches pourrissent jusqu'au 8 septembre. La note
-       est exigee, sinon le statut devient un clic gratuit. */
-    if (r.status === "Sans suite" && String(r.notes || "").trim()) add("dead", RULES.dead || 0);
-
-    if (r.contest_at) add("contest", RULES.contest || 0);
-
-    return { total, parts };
-  }
-  const scoreOf = r => detailOf(r).total;
-
-  /* Points gagnes aujourd'hui : seuls les jalons dates du jour comptent, plus
-     le concours propose aujourd'hui. Sert au « + N aujourd'hui » du bandeau. */
-  function todayOf(r) {
-    let n = 0;
-    STEPS.forEach(s => { if (isToday(r[s.col])) n += RULES[s.k] || 0; });
-    if (isToday(r.contest_at)) n += RULES.contest || 0;
-    return n;
-  }
 
   /* ---------------- Les donnees ----------------
      app.js fait un select("*") toutes les vingt secondes et garde le resultat
@@ -187,7 +115,7 @@
     } catch (_) {}
     return [];
   }
-  const targets = list => list.filter(r => r.segment !== SEG_FLUXYM);
+  const targets = S.targets;
   const mineRows = () => targets(ROWS).filter(r => r.owner === (FX.me && FX.me.name));
 
   /* Signature courte : si rien n'a change, on ne repeint pas. Comparer coute
@@ -566,9 +494,9 @@
 
   /* ---------------- Les celebrations ----------------
      Trois paliers, reprise fidele de Santiago-performances :
-       moins de FX2 points : la carte respire et une bulle monte ;
-       de FX2 a FX3 - 1    : halo colore et bulle plus large ;
-       FX3 et plus         : contour ambre, gain en grand, confettis.
+       moins de S.fx2 points : la carte respire et une bulle monte ;
+       de S.fx2 a S.fx3 - 1  : halo colore et bulle plus large ;
+       S.fx3 et plus         : contour ambre, gain en grand, confettis.
      Deux garde-fous appris la-bas : les points sont calcules avant l'effet
      (jamais lus dans le DOM), et un seul feu d'artifice toutes les six
      secondes, sinon quatre saisies d'affilee deviennent une gene. Ici s'en
@@ -621,7 +549,9 @@
   function celebrate(points, anchor) {
     if (!(points > 0)) return;
     const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let tier = points >= FX3 ? 3 : points >= FX2 ? 2 : 1;
+    /* Lus a chaud dans S : un alias local aurait fige la valeur de secours
+       avant que le bareme ne soit revenu de la base. */
+    let tier = points >= S.fx3 ? 3 : points >= S.fx2 ? 2 : 1;
 
     /* Le geste se fait souvent devant la personne, telephone en main : ce
        reglage plafonne l'effet sans priver du score. */

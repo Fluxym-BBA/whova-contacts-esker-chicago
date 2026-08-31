@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Barème | Stand Esker All Access 2026 — Fluxym</title>
+<link rel="icon" href="./assets/favicon.ico" sizes="any">
+<link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/app.css?v=20260831c">
+<link rel="stylesheet" href="./css/bareme.css?v=20260831c">
+</head>
+<body>
+<div class="veil">Chargement…</div>
+<nav id="main-nav"></nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="hero-badge">Barème</span>
+    <h1>Ce que rapporte <em>chaque geste</em></h1>
+    <p>Le score n'est jamais stocké : il est <b>recalculé à l'affichage</b> depuis les
+       jalons enregistrés en base. Changer une valeur ici rebat donc le classement de
+       toute l'équipe à la seconde suivante, <b>y compris pour le travail déjà fait</b>.</p>
+  </div>
+</header>
+
+<main class="wrap pulled">
+
+  <!-- Averti seulement pendant les trois jours du salon : un reglage le
+       8 septembre a midi ferait bouger le classement sous les yeux de tout le
+       monde, sans que personne ne comprenne pourquoi. -->
+  <div class="bm-alert" id="bm-live" hidden>
+    <b>Nous sommes pendant l'événement.</b> Un changement de barème maintenant
+    modifiera le classement de tous les téléphones au prochain rafraîchissement.
+    À faire le soir, ou pas du tout.
+  </div>
+
+  <!-- ==========================================================
+       LES REGLAGES
+       Les huit cles sont fixees par le code (js/score.js) et la
+       base n'autorise ni insertion ni suppression : on regle des
+       valeurs, on ne gere pas une liste.
+       ========================================================== -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Les points de chaque geste</h2>
+      <p>Un entier entre 0 et 100. Mettre <b>0</b> neutralise le geste sans le
+         supprimer. Les libellés viennent de la base et ne se modifient pas ici :
+         ils décrivent des gestes définis dans le code.</p>
+    </div>
+    <div id="bm-groups" class="bm-groups"></div>
+  </section>
+
+  <!-- ==========================================================
+       LES SEUILS DE CELEBRATION
+       ========================================================== -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Les seuils des célébrations</h2>
+      <p>Trois niveaux d'effet visuel selon les points gagnés d'un seul geste.
+         En dessous du premier seuil, la carte respire. Entre les deux, halo et
+         bulle plus large. Au-dessus du second, confettis.</p>
+    </div>
+    <div class="bm-seuils" id="bm-seuils"></div>
+    <p class="bm-hint" id="bm-seuils-hint"></p>
+  </section>
+
+  <!-- ==========================================================
+       L'APERCU
+       Recalcule avec js/score.js, la meme fonction que l'annuaire.
+       C'est la seule facon d'eviter qu'un ecran annonce un
+       classement que l'autre contredit.
+       ========================================================== -->
+  <section class="block">
+    <div class="block-head">
+      <h2>Le classement si vous enregistrez</h2>
+      <p>Calculé sur les fiches réelles, avec la même fonction que l'annuaire.
+         Rien n'est écrit tant que vous n'avez pas enregistré.</p>
+    </div>
+    <div class="bm-preview" id="bm-preview"></div>
+    <p class="bm-hint" id="bm-preview-hint"></p>
+  </section>
+
+  <p class="bm-foot">
+    Dernière modification : <span id="bm-when">—</span>.
+    La règle de priorisation et la lecture du barème par l'équipe se trouvent dans
+    <a href="./methode.html#bareme">Méthode</a>.
+  </p>
+</main>
+
+<!-- Barre d'actions collante : sur telephone, elle reste sous le pouce quel que
+     soit le defilement, et le compte des modifications en attente est visible
+     sans remonter. -->
+<div class="bm-bar" id="bm-bar" hidden>
+  <span class="bm-bar-txt" id="bm-bar-txt"></span>
+  <button class="ghost" type="button" id="bm-reset">Annuler</button>
+  <button class="ghost" type="button" id="bm-default">Valeurs d'origine</button>
+  <button class="bm-ok" type="button" id="bm-save">Enregistrer</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./js/config.js?v=20260831c"></script>
+<script src="./js/api.js?v=20260831c"></script>
+<script src="./js/nav.js?v=20260831c"></script>
+<script src="./js/score.js?v=20260831c"></script>
+<script src="./js/bareme.js?v=20260831c"></script>
+</body>
+</html>
