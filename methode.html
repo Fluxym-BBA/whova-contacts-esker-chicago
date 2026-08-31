@@ -6,7 +6,7 @@
 <title>Méthode de priorisation | Stand Esker All Access 2026 — Fluxym</title>
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
-<link rel="stylesheet" href="./css/app.css?v=20260828e">
+<link rel="stylesheet" href="./css/app.css?v=20260831a">
 </head>
 <body>
 <nav id="main-nav"></nav>
@@ -140,15 +140,72 @@
   ajoutée automatiquement : 48 des 56 salariés Esker et 12 clients sont dans ce
   cas. Le message reste un point de départ, pas un script.</p>
 
+  <h2 id="bareme">L'entonnoir, le score et le barème</h2>
+  <p>Le statut d'une fiche n'est plus seulement un état : chaque passage par une
+  étape est <b>horodaté en base</b>, définitivement. C'est ce qui permet de voir,
+  dans <i>Mon portefeuille</i>, où en est chacun de vos contacts, et de distinguer
+  un contact travaillé étape par étape d'un contact classé directement
+  « Rencontré ».</p>
+
+  <div id="bareme-fn"></div>
+
+  <p>Les quatre étapes se franchissent dans cet ordre, mais <b>rien n'oblige à
+  les suivre</b> : quelqu'un qui se présente au stand sans avoir jamais été
+  contacté passe directement à « Rencontré », et c'est un cas normal. Faire le
+  parcours complet rapporte simplement davantage, parce que c'est davantage de
+  travail.</p>
+
+  <div id="bareme-tbl"></div>
+
+  <h2>Les quatre règles du score qui surprennent</h2>
+  <table class="tbl">
+    <tr><th>Règle</th><th>Pourquoi</th></tr>
+    <tr><td><b>Prendre un contact ne rapporte rien</b></td>
+        <td>Sinon les fiches libres partiraient en une heure sans qu'une seule
+        soit travaillée. Ce sont les gestes qui comptent, pas le stock.</td></tr>
+    <tr><td><b>Le bonus « parcours complet » exige l'ordre chronologique</b></td>
+        <td>Cocher les quatre statuts d'affilée après la conversation ne le
+        déclenche pas : les jalons portent l'heure réelle de chaque passage.</td></tr>
+    <tr><td><b>Remettre une fiche à « À contacter » efface ses jalons</b></td>
+        <td>Ce statut veut dire que rien n'a été fait. C'est aussi la façon de
+        corriger une fausse manœuvre : redescendre un statut retire les points
+        des étapes au-dessus.</td></tr>
+    <tr><td><b>« Sans suite » ne retire rien</b></td>
+        <td>C'est une sortie de l'entonnoir, pas un retour en arrière : une
+        personne rencontrée puis classée sans suite a bien été rencontrée.
+        Qualifier négativement rapporte un point, à condition d'écrire une
+        note.</td></tr>
+  </table>
+  <p>Le score n'est <b>jamais stocké</b> : il se recalcule à chaque affichage
+  depuis les jalons. Quand le barème change, tout le monde est renoté
+  instantanément, et aucun historique n'est réécrit.</p>
+
+  <h2>Les célébrations, et comment les calmer</h2>
+  <p>Un changement de statut déclenche un effet proportionnel aux points gagnés :
+  discret en dessous du premier seuil, halo coloré entre les deux, confettis
+  au-delà du second. Trois garde-fous, parce que ça se passe sur un stand :</p>
+  <ul>
+    <li>l'effet ne part qu'<b>après confirmation par la base</b>, donc jamais
+    pour un enregistrement perdu faute de réseau, et jamais deux fois pour le
+    même jalon ;</li>
+    <li>un seul feu d'artifice toutes les six secondes, sinon quatre saisies
+    d'affilée deviennent une gêne ;</li>
+    <li>le bouton <b>Effets discrets</b>, en haut de <i>Mon portefeuille</i>,
+    plafonne tout au halo sans rien changer au score. Utile quand l'écran est
+    visible par la personne en face. Le réglage est propre à votre téléphone.</li>
+  </ul>
+  <p>Si votre système est réglé sur « mouvement réduit », il n'y a aucune
+  animation, et le score reste identique.</p>
+
   <h2>Priorités déjà corrigées par l'équipe</h2>
   <div id="prio-manuelles"></div>
 </main>
 
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260828e"></script>
-<script src="./js/api.js?v=20260828e"></script>
-<script src="./js/nav.js?v=20260828e"></script>
-<script src="./js/methode.js?v=20260828e"></script>
+<script src="./js/config.js?v=20260831a"></script>
+<script src="./js/api.js?v=20260831a"></script>
+<script src="./js/nav.js?v=20260831a"></script>
+<script src="./js/methode.js?v=20260831a"></script>
 </body>
 </html>

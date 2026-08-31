@@ -36,7 +36,7 @@
       pas un mardi matin sur un stand.
    -------------------------------------------------------------------------- */
 
-const VERSION = "20260830a";
+const VERSION = "20260831a";
 const SHELL   = "fx-shell-"   + VERSION;   /* pages, styles, scripts, icones */
 const VENDOR  = "fx-vendor-"  + VERSION;   /* polices Google et supabase-js  */
 const PATIENCE = 1200;                     /* ms accordees au reseau         */
@@ -60,7 +60,10 @@ const SHELL_FILES = [
   "./js/compte.js?v=" + VERSION,
   "./js/install.js?v=" + VERSION,
   "./css/install.css?v=" + VERSION,
+  "./js/gamif.js?v=" + VERSION,
+  "./css/gamif.css?v=" + VERSION,
   "./manifest.webmanifest?v=" + VERSION,
+  "./assets/qr-concours.png",
   "./assets/favicon.ico",
   "./assets/icon-192.png",
   "./assets/icon-512.png",

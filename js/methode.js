@@ -8,7 +8,7 @@
   const { $, esc } = FX;
 
   const { data, error } = await FX.sb.from("attendees")
-    .select("priority, priority_auto, priority_manual, priority_by, full_name, title, company, segment, priority_why");
+    .select("priority, priority_auto, priority_manual, priority_by, full_name, title, company, segment, priority_why, owner, status, funnel_msg_at, funnel_replied_at, funnel_rdv_at, funnel_met_at, contest_at");
   if (error) return FX.toast("Erreur de chargement : " + error.message, "bad");
 
   const rows = data || [];
@@ -31,6 +31,48 @@
     ? `<p class="lead2">${grp.length} sociétés concernées, ${grp.reduce((s, [, c]) => s + c, 0)} personnes :</p>
        <div class="chips">${grp.map(([c, k]) => `<span class="chip"><b>${k}</b> ${esc(c)}</span>`).join("")}</div>`
     : "<p>Aucune société n'atteint 4 inscrits.</p>";
+
+
+  /* ------------------------------------------------------------------------
+     Le bareme et l'entonnoir, lus en base.
+     Ces valeurs sont modifiables par le proprietaire : les ecrire en dur dans
+     methode.html en ferait une documentation fausse des le premier reglage.
+     C'est la page qu'on ouvre pendant l'evenement, elle doit dire vrai.
+     ------------------------------------------------------------------------ */
+  const STEPS = [
+    ["funnel_msg_at",     "Message envoyé"],
+    ["funnel_replied_at", "Réponse obtenue"],
+    ["funnel_rdv_at",     "Rendez-vous planifié"],
+    ["funnel_met_at",     "Rencontré au stand"]
+  ];
+  const cibles = rows.filter(r => r.segment !== "Fluxym (nous)");
+
+  $("#bareme-fn").innerHTML = `<div class="kpis">
+    <div class="kpi"><b>${cibles.filter(r => r.owner).length}</b><span>Attribués</span></div>
+    ${STEPS.map(([c, l]) => `<div class="kpi"><b>${cibles.filter(r => r[c]).length}</b><span>${l}</span></div>`).join("")}
+    </div>`;
+
+  const sr = await FX.sb.from("score_rules").select("key,label,points,sort_order").order("sort_order");
+  const ss = await FX.sb.from("score_settings").select("fx2,fx3").limit(1);
+
+  if (sr.error || !sr.data || !sr.data.length) {
+    $("#bareme-tbl").innerHTML = `<p class="mut">Barème indisponible hors réseau.
+      Il est lu dans la table <b>score_rules</b> et non recopié ici, pour qu'il
+      ne puisse pas être faux.</p>`;
+  } else {
+    const fx2 = ss.data && ss.data[0] ? ss.data[0].fx2 : 5;
+    const fx3 = ss.data && ss.data[0] ? ss.data[0].fx3 : 16;
+    const pal = p => p >= fx3 ? "confettis" : p >= fx2 ? "halo" : "discret";
+    $("#bareme-tbl").innerHTML = `<table class="tbl">
+      <tr><th>Ce qui rapporte</th><th>Points</th><th>Célébration</th></tr>
+      <tr><td>Prendre un contact</td><td><b>0</b></td><td class="mut">aucune</td></tr>
+      ${sr.data.map(r => `<tr><td>${esc(r.label)}</td><td><b>${r.points}</b></td>
+        <td class="mut">${pal(r.points)}</td></tr>`).join("")}
+      </table>
+      <p class="mut">Seuils actuels : ${fx2} points pour le halo, ${fx3} pour les
+      confettis. Barème et seuils sont modifiables par le propriétaire de
+      l'application, et ces valeurs sont celles réellement appliquées.</p>`;
+  }
 
   const man = rows.filter(r => r.priority_manual)
     .sort((a, b) => (a.company || "").localeCompare(b.company || ""));

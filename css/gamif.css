@@ -1,0 +1,244 @@
+/* ==========================================================================
+   css/gamif.css - Entonnoir, score et celebrations
+   Stand Esker All Access 2026.
+
+   POURQUOI UNE FEUILLE A PART
+   css/app.css est le fichier le plus dispute du depot : plusieurs chantiers
+   avancent en parallele et deux archives qui le reecrivent s'effacent l'une
+   l'autre. Tout ce qui concerne le score vit donc ici, charge apres app.css,
+   et tout est prefixe .gm pour ne rien recouvrir par accident.
+
+   ELLE N'UTILISE QUE LES VARIABLES DE app.css
+   Aucune couleur nouvelle en dehors des cinq teintes de confettis, qui sont
+   dans le JavaScript puisqu'elles sont dessinees sur un canvas.
+
+   ANIMATIONS : QUE box-shadow, transform, background ET opacity
+   Regle reprise de Santiago-performances. Animer une propriete de mise en
+   page ferait bouger les cartes voisines pendant qu'une celebration joue, et
+   la liste sauterait sous le pouce au moment ou l'on classe quelqu'un.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Le bandeau, dans le portefeuille et dans la vue equipe
+   -------------------------------------------------------------------------- */
+
+.gm{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px;margin-bottom:12px;box-shadow:var(--sh)}
+
+.gm-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+.gm-sc{display:flex;align-items:baseline;gap:6px;flex:0 0 auto}
+.gm-sc b{font-size:30px;font-weight:800;line-height:1;color:var(--navy);
+  font-variant-numeric:tabular-nums}
+.gm-sc span{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.04em}
+
+.gm-meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gm-pos{font-size:13.5px;font-weight:800;color:var(--ink)}
+.gm-day{font-size:12px;color:var(--muted);font-weight:600}
+.gm-day.up{color:var(--ok);font-weight:800}
+
+/* Le reglage tient dans le bandeau et non dans une page de preferences :
+   il se change entre deux conversations, pas au calme. */
+.gm-pref{margin-left:auto;flex:0 0 auto;border:1px solid var(--line);background:#fff;
+  color:var(--muted);font-size:11.5px;font-weight:700;border-radius:20px;
+  padding:7px 12px;min-height:36px;cursor:pointer}
+.gm-pref.on{border-color:#bae6fd;background:#f0f9ff;color:#075985}
+
+/* --------------------------------------------------------------------------
+   L'entonnoir
+   Cinq segments : ce qui reste a faire, puis les quatre jalons. Les nombres
+   sont cumulatifs, comme un entonnoir doit l'etre : « RDV » compte tous ceux
+   qui ont atteint le rendez-vous, meme s'ils sont depuis passes a rencontre.
+   Un clic filtre la liste dessous, un second clic l'annule.
+   -------------------------------------------------------------------------- */
+
+.gm-fn{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:12px}
+
+.gm-seg{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;min-height:58px;padding:8px 2px;border:1px solid var(--line);background:#fff;
+  border-radius:10px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.gm-seg b{font-size:20px;font-weight:800;line-height:1;color:var(--navy);
+  font-variant-numeric:tabular-nums}
+.gm-seg span{font-size:10.5px;font-weight:700;color:var(--muted);text-align:center;
+  line-height:1.15;white-space:nowrap}
+.gm-seg.on{background:var(--accent);border-color:var(--accent)}
+.gm-seg.on b,.gm-seg.on span{color:#fff}
+
+.gm-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;
+  padding-top:10px;border-top:1px solid var(--line)}
+
+/* Le rappel qui compte vraiment avant le 8 septembre : les priorites A sur
+   lesquelles rien n'a encore ete fait. */
+.gm-cta{border:1px solid #fecaca;background:#fff5f5;color:#b91c1c;font-size:12.5px;
+  font-weight:800;border-radius:20px;padding:8px 13px;min-height:38px;cursor:pointer}
+.gm-cta.on{background:var(--danger);border-color:var(--danger);color:#fff}
+.gm-ok{font-size:12.5px;font-weight:700;color:var(--ok)}
+.gm-dead{font-size:12px;color:var(--muted);font-weight:600}
+.gm-lk{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent)}
+
+/* --------------------------------------------------------------------------
+   Le classement d'equipe
+   Il complete #team-board sans le repeter : le tableau existant donne les
+   volumes, celui-ci donne l'ordre et le detail des jalons.
+   -------------------------------------------------------------------------- */
+
+.gm-board .gm-t{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--muted)}
+.gm-rows{display:flex;flex-direction:column;gap:7px}
+
+.gm-r{display:grid;grid-template-columns:22px 12px 1fr auto auto;grid-template-rows:auto auto;
+  align-items:center;gap:4px 9px}
+.gm-r.me{background:#f8fafc;border-radius:9px;padding:6px 8px;margin:-6px -8px}
+.gm-n{font-size:13px;font-weight:800;color:var(--muted);text-align:center}
+.gm-dot{width:12px;height:12px;border-radius:50%}
+.gm-w{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-r.me .gm-w{font-weight:800}
+.gm-fig{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.gm-p{font-size:17px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;
+  min-width:38px;text-align:right}
+.gm-bar{grid-column:3/-1;grid-row:2;display:block;height:5px;background:#eef2f7;
+  border-radius:99px;overflow:hidden}
+.gm-bar>s{display:block;height:100%;border-radius:99px;text-decoration:none}
+
+.gm-note{margin:11px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted)}
+.gm-note a{color:var(--accent);font-weight:700}
+
+/* --------------------------------------------------------------------------
+   Les trois paliers de celebration
+   Palier 1 en dessous du premier seuil, palier 2 entre les deux, palier 3
+   au dela du second. Les seuils vivent en base (score_settings) et non ici :
+   changer un poids du bareme sans pouvoir changer les seuils rendrait les
+   effets incoherents avec les points.
+   -------------------------------------------------------------------------- */
+
+/* La bulle est centree en bas de l'ecran, jamais ancree sur la carte : la
+   carte peut etre hors champ quand la fiche vient d'etre fermee, et une bulle
+   qui apparait dans le vide ne se voit pas. */
+.gm-bub{position:fixed;left:50%;bottom:calc(26vh + var(--safe-b));z-index:165;
+  transform:translateX(-50%);pointer-events:none;font-weight:800;
+  font-variant-numeric:tabular-nums;border-radius:99px;
+  animation:gm-rise 1.05s cubic-bezier(.22,.68,0,1) forwards}
+.gm-bub.t1{font-size:17px;padding:6px 14px;color:#fff;background:var(--ok);
+  box-shadow:0 6px 18px rgba(5,150,105,.32)}
+.gm-bub.t2{font-size:23px;padding:9px 19px;color:#fff;background:var(--accent);
+  box-shadow:0 10px 26px rgba(29,78,216,.36)}
+.gm-bub.t3{font-size:40px;padding:14px 30px;color:#78350f;
+  background:linear-gradient(180deg,#fde68a,#f59e0b);
+  box-shadow:0 16px 40px rgba(245,158,11,.5);animation-duration:1.45s}
+
+@keyframes gm-rise{
+  0%  {opacity:0;transform:translateX(-50%) translateY(14px) scale(.82)}
+  18% {opacity:1;transform:translateX(-50%) translateY(0) scale(1.06)}
+  32% {transform:translateX(-50%) translateY(-4px) scale(1)}
+  75% {opacity:1;transform:translateX(-50%) translateY(-30px) scale(1)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-52px) scale(.96)}
+}
+
+/* Le canvas passe au-dessus de la fiche (z-index 120) et sous le QR plein
+   ecran (200). pointer-events:none, sinon il avalerait le clic suivant, et
+   sur le stand le clic suivant est toujours urgent. */
+.gm-cfx{position:fixed;inset:0;z-index:160;pointer-events:none}
+
+/* Effets sur la carte elle-meme. Aucune propriete de mise en page. */
+.gm-hit1{animation:gm-breathe .5s ease}
+.gm-hit2{animation:gm-halo .8s ease}
+.gm-hit3{animation:gm-gold 1.15s ease}
+.gm-undo{animation:gm-shake .5s ease}
+
+@keyframes gm-breathe{
+  0%,100%{box-shadow:var(--sh)}
+  40%{box-shadow:0 0 0 4px rgba(5,150,105,.22)}
+}
+@keyframes gm-halo{
+  0%  {box-shadow:0 0 0 0 rgba(14,165,233,.5)}
+  60% {box-shadow:0 0 0 13px rgba(14,165,233,0)}
+  100%{box-shadow:var(--sh)}
+}
+@keyframes gm-gold{
+  0%  {box-shadow:0 0 0 0 rgba(245,158,11,.6);transform:scale(1)}
+  25% {transform:scale(1.03)}
+  70% {box-shadow:0 0 0 16px rgba(245,158,11,0);transform:scale(1)}
+  100%{box-shadow:var(--sh)}
+}
+/* Palier 0 : le retrait ne se celebre pas, il se signale. */
+@keyframes gm-shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-2.5px)}
+  75%{transform:translateX(2.5px)}
+}
+
+/* --------------------------------------------------------------------------
+   Le QR du concours
+   Plein ecran, fond blanc, rien d'autre a l'ecran. Un QR se scanne d'autant
+   mieux que l'ecran est clair et que rien ne distrait l'appareil d'en face.
+   -------------------------------------------------------------------------- */
+
+.gm-qr{position:fixed;inset:0;z-index:200;background:#fff;display:flex;
+  align-items:center;justify-content:center;padding:calc(16px + var(--safe-t)) 16px
+  calc(16px + var(--safe-b))}
+.gm-qr[hidden]{display:none}
+.gm-qr-in{display:flex;flex-direction:column;align-items:center;gap:14px;
+  width:100%;max-width:520px}
+.gm-qr-in img{width:100%;max-width:min(78vh,460px);height:auto;display:block}
+.gm-qr-tx{text-align:center}
+.gm-qr-tx b{display:block;font-size:17px;color:var(--navy)}
+.gm-qr-tx span{display:block;margin-top:4px;font-size:11.5px;color:var(--muted);
+  word-break:break-all}
+.gm-qr-x{border:0;background:var(--navy);color:#fff;font-size:15px;font-weight:800;
+  border-radius:11px;min-height:50px;padding:0 34px;cursor:pointer}
+
+/* La barre d'onglets basse et la bande de lettres ne doivent pas rester
+   au-dessus du QR pendant qu'on le montre a quelqu'un. */
+body.gm-qr-on .tabs,body.gm-qr-on .scrub,body.gm-qr-on .fmenu{display:none}
+
+.gm-qrbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9}
+
+/* --------------------------------------------------------------------------
+   Le bloc concours dans la fiche
+   Insere dans .d-body, avant .d-meta. La case ecrit tout de suite et ne passe
+   pas par le bouton Enregistrer : un geste, une ecriture.
+   -------------------------------------------------------------------------- */
+
+.gm-d{background:#f8fafc;border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;margin-top:14px}
+.gm-d-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:#475569;margin-bottom:8px}
+.gm-d-qr{width:100%;min-height:46px;border:1px solid var(--accent);background:#fff;
+  color:var(--accent);font-size:14px;font-weight:800;border-radius:9px;cursor:pointer}
+.gm-d-ck{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:14px;
+  font-weight:700;cursor:pointer;min-height:44px}
+.gm-d-ck input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--accent)}
+.gm-d-ck i{margin-left:auto;font-style:normal;font-size:12px;font-weight:800;
+  color:var(--ok);background:#ecfdf5;border-radius:20px;padding:4px 9px}
+.gm-d-n{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:7px}
+
+/* --------------------------------------------------------------------------
+   Petits ecrans
+   Les cinq segments doivent tenir sur 320px de large sans troncature. Les
+   libelles ne sont pas raccourcis, seule l'echelle descend : « Rencontré »
+   coupe en « Renc. » ne veut plus rien dire a la lecture rapide.
+   -------------------------------------------------------------------------- */
+
+@media(max-width:420px){
+  .gm{padding:11px}
+  .gm-sc b{font-size:26px}
+  .gm-fn{gap:4px}
+  .gm-seg{min-height:54px;padding:7px 1px;border-radius:9px}
+  .gm-seg b{font-size:18px}
+  .gm-seg span{font-size:9.5px}
+  .gm-pref{padding:6px 10px;font-size:11px}
+  .gm-fig{display:none}          /* le detail des jalons passe apres le rang */
+}
+
+/* --------------------------------------------------------------------------
+   Mouvement reduit
+   Le systeme le demande, on obeit : plus aucune animation, les confettis sont
+   deja coupes cote JavaScript. Le score et l'entonnoir restent identiques.
+   -------------------------------------------------------------------------- */
+
+@media(prefers-reduced-motion:reduce){
+  .gm-bub,.gm-hit1,.gm-hit2,.gm-hit3,.gm-undo{animation:none}
+  .gm-bub{opacity:1}
+  .gm-seg{transition:none}
+}

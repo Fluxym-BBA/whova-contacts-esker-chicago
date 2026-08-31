@@ -17,8 +17,10 @@ GitHub Pages (ce repo, statique)     Supabase — fluxym-esker-allaccess-2026
 │ index.html   js/app.js    │ ─────► │ attendees participants + suivi       │
 │ compte.html  js/compte.js │  REST  │ team      comptes et niveaux d'accès │
 │ admin.html   js/admin.js  │        │ activity_log  traçabilité            │
-│ js/api.js    js/nav.js    │        │ RLS       is_fluxym() / is_owner()   │
-│ css/app.css               │        ├──────────────────────────────────────┤
+│ js/api.js    js/nav.js    │        │ score_rules   barème de points       │
+│ js/gamif.js  css/gamif.css│        │ score_settings seuils des effets     │
+│ css/app.css               │        │ RLS       is_fluxym() / is_owner()   │
+│                           │        ├──────────────────────────────────────┤
 │ sw.js  manifest.webmanif. │        │                                      │
 │   coquille en cache,      │        │   Jamais mis en cache par sw.js :    │
 │   ouverture hors réseau   │        │   ni les tables, ni l'authentif.     │
@@ -83,6 +85,15 @@ forgerait un appel direct reçoit un `403`.
   le déclencheur `handle_new_user`, y compris s'il est créé depuis le
   tableau de bord Supabase. Sans cela il pourrait se connecter sans rien
   voir, et l'erreur serait incompréhensible.
+
+**Le barème est en lecture pour l'équipe, en écriture pour le propriétaire.**
+`score_rules` et `score_settings` sont couvertes par la RLS comme les autres
+tables : `select` conditionné à `is_fluxym()`, `update` à `is_owner()`. Aucune
+policy d'`insert` ni de `delete`, volontairement : les clés du barème sont
+fixes et la ligne unique de `score_settings` ne doit pas pouvoir disparaître.
+`anon` n'a aucun droit dessus. Le trigger `stamp_funnel`, comme les autres
+fonctions internes, a son droit d'exécution révoqué pour `anon`,
+`authenticated` et `public`.
 
 **Ce qui est stocké sur l'appareil** (depuis le 28 août, voir « Hors
 connexion ») : la session Supabase, comme avant, plus une copie de l'annuaire
@@ -167,12 +178,14 @@ combien de contacts redeviendront libres.
 ├── sw.js                         service worker : coquille en cache, ouverture hors réseau
 ├── css/
 │   ├── app.css                   feuille unique, partagée par toutes les pages
-│   └── install.css               boutons et fiche « Installer » (voir « Sur téléphone »)
+│   ├── install.css               boutons et fiche « Installer » (voir « Sur téléphone »)
+│   └── gamif.css                 entonnoir, score, célébrations, QR du concours
 ├── js/
 │   ├── config.js                 URL + clé anon
 │   ├── api.js                    client, garde d'authentification, appels admin
 │   ├── nav.js                    navigation partagée
-│   └── install.js                installation sur l'écran d'accueil
+│   ├── install.js                installation sur l'écran d'accueil
+│   └── gamif.js                  entonnoir, score, célébrations, QR du concours
 ├── assets/
 │   ├── favicon.ico               onglet de navigateur, 16/32/48/64
 │   ├── icon-192.png              Android, écran d'accueil
@@ -180,7 +193,8 @@ combien de contacts redeviendront libres.
 │   ├── icon-maskable-512.png     Android, icône rognée par le système
 │   ├── apple-touch-icon-180.png  iPhone, iOS ignore le manifeste
 │   ├── apple-touch-icon-167.png  iPad Pro
-│   └── apple-touch-icon-152.png  iPad et iPad mini
+│   ├── apple-touch-icon-152.png  iPad et iPad mini
+│   └── qr-concours.png           QR du concours « 2 jours de conseil » (affiché plein écran)
 ├── supabase/
 │   ├── functions/admin-users/index.ts
 │   └── migrations/*.sql
@@ -411,16 +425,18 @@ l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
 mardi matin sur un stand. En cas de doute : le marqueur `interface v6` de
 l'en-tête dit quelle feuille de style est réellement chargée.
 
-**Version déployée le 30 août : `20260830a`, sur `index.html` et `sw.js`
-seulement.** `login.html`, `methode.html`, `compte.html` et `admin.html`
-restent volontairement sur `20260828h`, pour ne pas réécrire quatre fichiers
-qu'aucune de leurs modifications ne concerne. La divergence est sans effet ici
-parce que `sw.js` retombe sur `cache.match(..., { ignoreSearch: true })`
-lorsque l'URL exacte n'est pas en cache : les quatre pages continuent donc de
-s'ouvrir hors réseau avec le `css/app.css` mis en cache sous la nouvelle
-étiquette. À la prochaine livraison qui touche `css/app.css` ou `js/app.js`,
-les cinq pages doivent repasser à la même valeur. `interface v6` est inchangé,
-`css/app.css` n'ayant pas été modifié.
+**Version déployée le 31 août : `20260831a`, sur les cinq pages HTML et
+`sw.js`.** La divergence tolérée jusque-là est levée : `login.html`,
+`methode.html`, `compte.html` et `admin.html` étaient restées sur `20260828e`
+alors que `index.html` et `sw.js` étaient passés à `20260830a`. Le repli
+`cache.match(..., { ignoreSearch: true })` masquait le problème, mais il ne le
+supprimait pas : les URL en `?v=20260828e` n'étant pas dans `SHELL_FILES`,
+elles n'étaient jamais précachées et dépendaient d'une entrée laissée par une
+version antérieure. Les cinq pages portent désormais la même étiquette.
+
+`interface v6` est inchangé, `css/app.css` n'ayant pas été modifié. La
+livraison du 31 août ne touche ni `css/app.css` ni `js/app.js` : l'entonnoir et
+le score vivent entièrement dans `js/gamif.js` et `css/gamif.css`.
 
 ---
 
@@ -479,6 +495,124 @@ le meilleur moyen de perdre cette note.
 `team.name` en `on update cascade`, les contacts déjà attribués suivent.
 
 ---
+
+## L'entonnoir, le score et le QR du concours
+
+Ajouté le 31 août. La règle de calcul est documentée **dans l'application**,
+sur `methode.html#bareme`, parce que c'est la page qu'on ouvre pendant
+l'événement. Ce qui suit décrit l'architecture, pas la règle.
+
+### Le problème que ça résout
+
+`status` ne stocke que la dernière étape atteinte. On ne pouvait donc pas
+répondre à deux questions pourtant élémentaires : où en est chacun de mes
+contacts, et un contact « Rencontré » a-t-il été travaillé avant ou classé
+directement à l'arrivée au stand. L'onglet *Mon portefeuille* listait les
+fiches sans dire ce qu'il restait à faire.
+
+### Quatre jalons, posés en base
+
+`funnel_msg_at`, `funnel_replied_at`, `funnel_rdv_at`, `funnel_met_at`, plus
+`contest_at` pour le concours. Ils sont posés par le trigger `stamp_funnel`
+(BEFORE UPDATE sur `attendees`), jamais par le front, pour la même raison que
+`priority_auto` et `priority_manual` : une règle de score écrite dans le
+navigateur est contournable, et le score ne voudrait plus rien dire.
+
+Le trigger ne pose que le jalon de l'étape atteinte. Passer directement à
+« Rencontré » ne pose donc pas les trois jalons précédents, ce qui est
+exactement ce qui permet de distinguer les deux parcours. Trois cas
+particuliers, tous testés :
+
+| Transition | Effet sur les jalons |
+|---|---|
+| Statut qui redescend | les jalons au-dessus sont retirés, pour corriger une fausse manœuvre |
+| Passage à « Sans suite » | aucun jalon touché : c'est une sortie de l'entonnoir, pas un retour en arrière |
+| Retour à « À contacter » | les quatre jalons tombent : ce statut signifie que rien n'a été fait |
+
+### Le barème, et pourquoi le score n'est pas stocké
+
+Deux tables, `score_rules` (une ligne par action) et `score_settings` (les deux
+seuils de célébration). Le score se **recalcule à chaque affichage** depuis les
+jalons : changer un poids renote toute l'équipe instantanément, sans migration
+de données, sans risque d'échec à mi-chemin et sans réécrire d'historique.
+
+Il n'existe **aucune interface de réglage pour l'instant** : le barème se
+modifie en SQL. La page réservée au propriétaire est prévue mais n'est pas
+livrée, et elle passe après ce qui sert sur le stand.
+
+`js/methode.js` lit ces deux tables pour afficher le barème réellement
+appliqué. Écrire les points en dur dans `methode.html` en aurait fait une
+documentation fausse dès le premier réglage.
+
+### Ce qui est affiché, et où
+
+Dans *Mon portefeuille*, un bandeau donne le score, le rang, les points du
+jour et l'entonnoir en cinq segments cliquables qui filtrent la liste dessous.
+Dans *Équipe*, un classement complète `#team-board` sans le répéter. Le score
+**n'est pas dans la barre du haut** : elle sert à répondre « qui l'a pris » en
+cinq secondes, rien ne doit la surcharger.
+
+Les fiches du segment `Fluxym (nous)` sont exclues du score, comme elles le
+sont déjà des cibles dans la vue Équipe.
+
+### Comment ça s'accroche sans toucher `js/app.js`
+
+`js/gamif.js` et `css/gamif.css` sont autonomes, chargés en dernier, sur le
+modèle de `js/install.js`. Le script :
+
+- lit la copie locale `fx.rows.v1` qu'entretient déjà `js/app.js`, dont le
+  `select("*")` ramène les nouvelles colonnes sans modification ;
+- écoute les gestes par **délégation en phase de capture** sur `document` :
+  aucune fonction de `js/app.js` n'est enveloppée ni remplacée ;
+- insère ses blocs comme **frères** de `#grid-mine` et `#team-board`, jamais
+  dedans, et un `MutationObserver` le prévient quand `js/app.js` a repeint,
+  pour réappliquer un filtre en cours.
+
+Conséquence voulue : si `js/gamif.js` échoue, l'annuaire redevient exactement
+ce qu'il était. Et une livraison parallèle sur `js/app.js` ou `css/app.css`
+n'efface pas ce travail.
+
+Deux clés locales, `fx.gamif.pref.v1` (réglage des effets, propre à l'appareil)
+et `fx.gamif.rules.v1` (barème en cache, pour le hors réseau). Toutes deux sont
+effacées par `forgetLocal()` à la déconnexion, comme les autres clés `fx.*`.
+
+### Les célébrations
+
+Trois paliers, repris de `Fluxym-BBA/Santiago-performances` : effet discret,
+halo, puis confettis sur un canvas plein écran. Les seuils vivent en base.
+Trois garde-fous :
+
+1. **Les points sont calculés avant l'effet**, jamais lus dans le DOM. Dans
+   Santiago, la version qui lisait la variation du score affiché ne dépassait
+   jamais le palier 1, y compris pour une action à 25 points.
+2. **Un seul feu d'artifice toutes les six secondes**, sinon quatre saisies
+   d'affilée transforment l'effet en gêne.
+3. **L'effet ne part qu'après confirmation par la base.** `js/gamif.js` relit
+   la fiche et compare les jalons : le gain affiché est une vraie différence de
+   score. Aucune célébration pour une écriture perdue faute de réseau, aucune
+   célébration en double pour un jalon déjà posé. Coût assumé : 600 à 900 ms
+   entre le geste et l'effet.
+
+Le bouton *Effets discrets* du bandeau plafonne tout au halo, sans rien changer
+au score : le geste se fait souvent devant la personne concernée.
+`prefers-reduced-motion` coupe toutes les animations.
+
+### Le QR du concours
+
+`assets/qr-concours.png` est servi depuis le dépôt et précaché par `sw.js` :
+il s'affiche donc quand le réseau du salon s'écroule. Un bouton dans la barre
+de recherche et un autre dans la fiche l'ouvrent en plein écran, fond blanc,
+barre d'onglets masquée. Il pointe vers
+`go.fluxym.com/en/esker_all_access_consulting`, dont le formulaire capte nom,
+e-mail, téléphone, fonction et société avec la mention de politique de
+confidentialité : c'est le canal de capture des coordonnées, il n'y en a pas
+d'autre à construire.
+
+Limite assumée : une image unique ne dit pas **qui** l'a fait scanner. La case
+*Concours proposé* de la fiche porte donc une déclaration, pas une mesure. Une
+attribution réelle demanderait un QR par membre, donc une génération côté
+client, donc un encodeur QR en vanilla, qui servirait aussi à la vCard. Ce
+n'est pas fait.
 
 ## Répartition des portefeuilles
 
