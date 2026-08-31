@@ -261,6 +261,17 @@ body.gm-qr-on .tabs,body.gm-qr-on .scrub,body.gm-qr-on .fmenu{display:none}
   display:flex;align-items:center;justify-content:center;padding:24px}
 .gm-who[hidden]{display:none}
 body.gm-who-on{overflow:hidden}
+
+/* La fiche de app.js est a z-index 120, ce panneau a 190 : sans ces trois
+   lignes, ouvrir une fiche depuis le portefeuille d'un collegue ouvrirait une
+   fiche INVISIBLE, derriere le panneau, et modifiable a l'aveugle. Le geste le
+   plus couteux qu'on puisse imaginer sur un stand. On remonte donc la fiche et
+   ses deux voiles au-dessus du panneau, et seulement quand il est ouvert : le
+   chemin normal de l'annuaire garde ses valeurs d'origine. On reste sous le QR
+   plein ecran (200), qui doit primer sur tout. */
+body.gm-who-on #drawer{z-index:196}
+body.gm-who-on #drawer-back{z-index:194}
+body.gm-who-on.drawer-open .sheet-back{z-index:194}
 .gm-who-in{width:min(680px,100%);max-height:min(86vh,860px);overflow-y:auto;
   overscroll-behavior:contain;background:#fff;border-radius:18px;
   box-shadow:0 26px 70px rgba(15,23,42,.32);padding:16px 16px 12px}
@@ -295,6 +306,14 @@ body.gm-who-on{overflow:hidden}
 
 .gm-wc{border:1px solid var(--line);border-left:3px solid #e2e8f0;border-radius:11px;
   padding:9px 11px;background:#fff}
+/* La carte entiere est cliquable : au pouce, une cible de la taille de la
+   carte se touche sans viser. Le retour au toucher est immediat, avant meme
+   que la fiche s'ouvre, sinon on tape deux fois. */
+.gm-wc-clic{cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:box-shadow .14s ease,transform .14s ease,border-color .14s ease}
+.gm-wc-clic:hover{border-color:#c7d2fe;box-shadow:0 6px 18px rgba(15,23,42,.09)}
+.gm-wc-clic:active{transform:scale(.985);box-shadow:none}
+.gm-wc-clic:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .gm-wc.step-msg{border-left-color:#93c5fd}
 .gm-wc.step-replied{border-left-color:#60a5fa}
 .gm-wc.step-rdv{border-left-color:#2563eb}
@@ -339,7 +358,7 @@ body.gm-who-on{overflow:hidden}
   .gm-wx{width:44px;height:44px}
   .gm-wsc b{font-size:23px}
   .gm-wlist{grid-template-columns:1fr;gap:7px}
-  .gm-wc-n{display:none}   /* la note complete se lit dans l'annuaire, pas ici */
+  .gm-wc-n{display:none}   /* la note complete se lit dans la fiche, en un tap */
 }
 @media(max-width:420px){
   .gm-wfn{gap:4px}

@@ -864,4 +864,4 @@ body.drawer-open .sheet-back{opacity:1;pointer-events:auto}
    ete perdue le 28 aout a se demander si un deploiement etait passe.
    A incrementer a chaque livraison qui touche css/app.css.
    ========================================================================== */
-.nav-brand span::after{content:" \00b7 interface v7"}
+.nav-brand span::after{content:" \00b7 interface v8"}

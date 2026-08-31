@@ -229,7 +229,7 @@ Rien à installer, aucune étape de build.
 
 ### Savoir quelle version est réellement affichée
 
-Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v7`. Ce
+Le sous-titre de l'en-tête affiche `Esker All Access 2026 · interface v8`. Ce
 libellé est écrit dans `css/app.css`, pas dans le HTML : s'il apparaît, c'est
 que la feuille de style chargée est bien la dernière. **Ce numéro doit être
 incrémenté à chaque livraison qui touche `css/app.css`.**
@@ -429,10 +429,10 @@ exactes qu'il trouve dans les pages ; si les deux valeurs divergent, il met en
 cache des fichiers que personne ne demande, et sert au navigateur les anciens.
 Une livraison qui oublie `VERSION` ne changera donc rien sur les téléphones de
 l'équipe, et c'est exactement le genre de panne qu'on ne diagnostique pas un
-mardi matin sur un stand. En cas de doute : le marqueur `interface v7` de
+mardi matin sur un stand. En cas de doute : le marqueur `interface v8` de
 l'en-tête dit quelle feuille de style est réellement chargée.
 
-**Version déployée le 31 août : `20260831c`, sur les six pages HTML et
+**Version déployée le 31 août : `20260831d`, sur les six pages HTML et
 `sw.js`.** La divergence tolérée jusque-là est levée : `login.html`,
 `methode.html`, `compte.html` et `admin.html` étaient restées sur `20260828e`
 alors que `index.html` et `sw.js` étaient passés à `20260830a`. Le repli
@@ -441,9 +441,9 @@ supprimait pas : les URL en `?v=20260828e` n'étant pas dans `SHELL_FILES`,
 elles n'étaient jamais précachées et dépendaient d'une entrée laissée par une
 version antérieure. Les cinq pages portent désormais la même étiquette.
 
-Le marqueur passe à **`interface v7`** : contrairement à `20260831a`, qui
+Le marqueur passe à **`interface v8`** : contrairement à `20260831a`, qui
 vivait entièrement dans `js/gamif.js` et `css/gamif.css`, les versions
-`20260831b` et `20260831c` modifient `css/app.css`, `js/app.js` et
+`20260831b` et suivantes modifient `css/app.css`, `js/app.js` et
 `index.html`, pour les filtres à choix multiple. C'est la seule partie de ce
 travail qui touche le cœur de l'annuaire, et c'est pour ça que le numéro visible
 bouge : si l'en-tête affiche encore `v6`, la feuille de style n'est pas la
@@ -455,7 +455,9 @@ Ce que chaque étape du 31 août a apporté :
 - `20260831b` : filtres à choix multiple, portefeuille d'un collègue en
   consultation ;
 - `20260831c` : écran de réglage du barème, et extraction du calcul du score
-  dans `js/score.js`.
+  dans `js/score.js` ;
+- `20260831d` : les fiches du portefeuille d'un collègue s'ouvrent et se
+  modifient, la consultation seule est abandonnée.
 
 `bareme.html` est la **sixième page**. Comme `admin.html`, elle n'est
 volontairement **pas dans `SHELL_FILES`** : on ne règle pas un barème entre deux
@@ -589,14 +591,39 @@ entonnoir cliquable, et les fiches suivies, triées par priorité puis par nom,
 avec l'étape atteinte, les points, le créneau de rendez-vous s'il existe et le
 début des notes sur ordinateur.
 
-### Consultation seule, et pourquoi
+### Modifiable depuis cette vue, et pourquoi
 
-Aucun bouton, aucun changement de statut, aucune libération, aucune ouverture
-du volet depuis cette vue. Sur un stand, à une main, entre deux conversations,
-le risque n'est pas de manquer un geste, c'est de **modifier le contact de
-quelqu'un d'autre en croyant regarder**. Pour reprendre un contact, le chemin
-reste l'annuaire, où le propriétaire est affiché sur la fiche et où la reprise
-demande une confirmation.
+La première version, `20260831b`, n'autorisait aucun geste ici : le risque
+identifié était de modifier le contact de quelqu'un d'autre en croyant
+regarder. L'usage a tranché dans l'autre sens le jour même. À huit sur un
+stand, on intervient régulièrement sur un contact attribué à quelqu'un
+d'autre, celui qui passe devant le stand pendant que son responsable est en
+rendez-vous. Fermer la vue, retrouver la personne dans l'annuaire et rouvrir sa
+fiche coûtait plus cher que le risque évité.
+
+Depuis `20260831d`, **une carte ouvre la fiche complète**, la même que dans
+l'annuaire : mêmes champs, même bouton *Enregistrer*, et le responsable y reste
+modifiable, donc reprendre un contact se fait sans quitter la vue. Le seul
+ajout côté logique est un attribut `data-open` sur la carte, que le délégué de
+clic de `js/app.js` reconnaît déjà, plus une remontée de `z-index` : la fiche
+est à 120, ce panneau à 190, et sans les trois lignes de `css/gamif.css` qui
+la remontent à 196 quand `body.gm-who-on` est posé, la fiche s'ouvrirait
+**derrière** le panneau, invisible et modifiable à l'aveugle.
+
+Échap suit : quand la fiche est ouverte par-dessus le panneau, elle se ferme
+seule et la liste reste affichée derrière. Sans ce garde-fou, les deux
+gestionnaires de clavier se déclenchaient ensemble et on perdait la liste qu'on
+était en train de lire.
+
+Deux conséquences à connaître :
+
+- la relecture après enregistrement passe par `verify()`, le même chemin que
+  les boutons de l'entonnoir, donc la carte se met à jour dans le geste au lieu
+  d'attendre le cycle de vingt secondes de `js/app.js` ;
+- la célébration part aussi depuis cette vue, et les points célébrés sont ceux
+  du **propriétaire de la fiche**, pas ceux de qui saisit. C'est assumé :
+  l'effet confirme que l'écriture est passée, et l'en-tête du panneau nomme la
+  personne dont on regarde le portefeuille.
 
 ### Ce que ça coûte
 

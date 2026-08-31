@@ -227,7 +227,7 @@
           <i class="gm-bar"><s style="width:${Math.round(x.score / max * 100)}%;background:${esc(x.color || "#94a3b8")}"></s></i>
         </div>`;
       }).join("")}</div>
-      <p class="gm-note">Un nom ouvre le portefeuille de la personne, en consultation seule.
+      <p class="gm-note">Un nom ouvre le portefeuille de la personne, fiches modifiables.
         Points calculés à l’affichage depuis les jalons enregistrés en base :
         prendre un contact ne rapporte rien, seuls les gestes comptent.
         <a href="./methode.html#bareme">Voir le barème</a></p>`;
@@ -239,15 +239,29 @@
      l'autre. Un nom du tableau d'equipe ouvre donc le meme bandeau que le sien,
      avec le meme entonnoir cliquable et la liste des fiches suivies.
 
-     Lecture seule, decision assumee : aucun bouton d'action, aucune ouverture
-     du volet. Sur un stand, a une main, entre deux conversations, le risque
-     n'est pas de manquer un geste, c'est de changer le statut d'un contact qui
-     n'est pas le sien en croyant consulter. Pour reprendre un contact, le
-     chemin reste celui de l'annuaire, ou le nom du proprietaire est affiche et
-     ou la reprise demande une confirmation.
+     Modifiable, comme dans l'annuaire. La premiere version etait en
+     consultation seule, par crainte de changer le statut d'un contact qui
+     n'est pas le sien en croyant le lire. L'usage a tranche dans l'autre
+     sens : a huit sur un stand, on intervient regulierement sur un contact
+     attribue a quelqu'un d'autre, celui qui passe devant le stand pendant que
+     son responsable est en rendez-vous. Obliger a fermer la vue, retrouver la
+     personne dans l'annuaire et rouvrir sa fiche coutait plus cher que le
+     risque evite.
 
-     Aucune requete reseau : tout se calcule sur la copie locale deja chargee,
-     donc la vue s'ouvre aussi vite hors reseau que dessus. */
+     La fiche ouverte est celle de app.js, pas une copie : memes champs, meme
+     bouton Enregistrer, et le responsable y reste modifiable, donc reprendre
+     un contact se fait sans quitter la vue. Le seul ajout est un attribut
+     data-open sur la carte, que le delegue de clic de app.js reconnait deja,
+     et une remontee de z-index en CSS sans laquelle la fiche s'ouvrirait
+     DERRIERE cet ecran.
+
+     La relecture apres enregistrement passe par verify(), le meme chemin que
+     les boutons de l'entonnoir : le clic sur la carte pose LAST_ID, le clic
+     sur Enregistrer declenche la relecture, la carte se remet a jour dans le
+     geste au lieu d'attendre le cycle de vingt secondes de app.js.
+
+     Aucune requete reseau pour afficher : tout se calcule sur la copie locale
+     deja chargee, donc la vue s'ouvre aussi vite hors reseau que dessus. */
 
   const PRIO_ORD = { A:0, B:1, C:2 };
 
@@ -268,16 +282,21 @@
     return s ? !!r[s.col] : true;
   }
 
-  /* Une fiche, sans aucun controle. Les notes sont la partie la plus utile a
-     un collegue (« deja vu l'an dernier », « rappeler apres 14 h ») et la plus
-     longue : on en montre le debut, l'infobulle porte le reste. */
+  /* Une carte. Les notes sont la partie la plus utile a un collegue (« deja
+     vu l'an dernier », « rappeler apres 14 h ») et la plus longue : on en
+     montre le debut, l'infobulle porte le reste.
+
+     role=button et tabindex sur l'article : la carte entiere est la cible,
+     pas un lien discret dans un coin, parce que la cible utile au pouce est
+     la carte. */
   function whoCard(r) {
     const st = stageOf(r);
     const pts = scoreOf(r);
     const dead = r.status === "Sans suite";
     const cls = dead ? " dead" : st ? " step-" + st.k : "";
     const note = (r.notes || "").trim();
-    return `<article class="gm-wc${cls}">
+    return `<article class="gm-wc gm-wc-clic${cls}" data-open="${esc(r.id)}"
+      role="button" tabindex="0" title="Ouvrir la fiche de ${esc(r.full_name)}">
       <div class="gm-wc-h">
         <span class="gm-wc-av" style="background:${FX.hue(r.full_name)}">${FX.initials(r.full_name)}</span>
         <div class="gm-wc-id">
@@ -344,7 +363,7 @@
           : `<p class="gm-wempty">${list.length ? "Aucune fiche dans ce filtre." : "Aucun contact attribué pour le moment."}</p>`}
       </div>
       <footer class="gm-wf">
-        <span>Consultation seule. Pour reprendre un contact, passez par l’annuaire.</span>
+        <span>Une carte ouvre la fiche, modifiable comme dans l’annuaire.</span>
         <a href="./methode.html#bareme">Barème</a>
       </footer>`;
   }
@@ -754,12 +773,25 @@
     }, true);
 
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape") { hideQr(); closeWho(); return; }
-      /* Les lignes portent role="button" : au clavier, Entree et Espace
-         doivent faire ce que fait le clic. */
+      if (e.key === "Escape") {
+        hideQr();
+        /* La fiche s'ouvre par-dessus ce panneau. Echap ferme alors la fiche
+           seule, c'est app.js qui s'en charge : fermer les deux d'un coup
+           ferait perdre la liste qu'on etait en train de lire. */
+        if (!document.body.classList.contains("drawer-open")) closeWho();
+        return;
+      }
+      /* Les lignes et les cartes portent role="button" : au clavier, Entree et
+         Espace doivent faire ce que fait le clic. */
       if (e.key !== "Enter" && e.key !== " ") return;
-      const w = e.target && e.target.closest && e.target.closest("[data-who]");
-      if (w && !e.target.closest("#gm-who")) { e.preventDefault(); openWho(w.dataset.who); }
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const w = t.closest("[data-who]");
+      if (w && !t.closest("#gm-who")) { e.preventDefault(); openWho(w.dataset.who); return; }
+      /* Dans le panneau, on ne reimplemente pas l'ouverture : on declenche le
+         clic, donc le meme chemin que le pouce, delegue de app.js compris. */
+      const op = t.closest("#gm-who [data-open]");
+      if (op) { e.preventDefault(); op.click(); }
     });
 
     /* app.js repeint #grid-mine et #team-board sans nous prevenir : on

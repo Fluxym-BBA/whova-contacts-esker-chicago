@@ -6,7 +6,7 @@
 <title>Méthode de priorisation | Stand Esker All Access 2026 — Fluxym</title>
 <link rel="icon" href="./assets/favicon.ico" sizes="any">
 <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
-<link rel="stylesheet" href="./css/app.css?v=20260831c">
+<link rel="stylesheet" href="./css/app.css?v=20260831d">
 </head>
 <body>
 <nav id="main-nav"></nav>
@@ -197,20 +197,29 @@
   <p>Si votre système est réglé sur « mouvement réduit », il n'y a aucune
   animation, et le score reste identique.</p>
 
-  <h2 id="voir-portefeuille">Voir le portefeuille d'un collègue</h2>
+  <h2 id="voir-portefeuille">Voir et modifier le portefeuille d'un collègue</h2>
   <p>Dans l'onglet <i>Équipe</i>, <b>un nom s'ouvre</b> : celui du classement
   comme celui du tableau des portefeuilles. On y lit exactement ce que la
   personne voit de son côté, son score, son entonnoir cliquable et ses fiches,
   avec ses notes sur ordinateur.</p>
-  <p>C'est une <b>consultation seule</b>, et c'est voulu. Aucun bouton, aucun
-  changement de statut, aucune libération possible depuis cette vue : le risque,
-  sur un stand, n'est pas de manquer un geste, c'est de modifier le contact de
-  quelqu'un d'autre en croyant simplement regarder. Pour reprendre un contact,
-  le chemin reste l'annuaire, où le propriétaire est affiché sur la fiche.</p>
-  <p>Trois usages qui justifient l'écran : savoir <b>si un contact est déjà
+  <p><b>Une carte ouvre la fiche, et la fiche est modifiable</b>, exactement
+  comme depuis l'annuaire : mêmes champs, même bouton <i>Enregistrer</i>. Le
+  responsable y reste modifiable, donc on peut reprendre le contact sans
+  quitter la vue. À huit sur un stand, on intervient forcément sur un contact
+  attribué à quelqu'un d'autre, celui qui passe devant le stand pendant que son
+  responsable est en rendez-vous : ressortir pour le retrouver dans l'annuaire
+  coûtait plus cher que le risque évité.</p>
+  <p>Deux points à savoir avant de saisir : le score qui monte est celui du
+  <b>propriétaire de la fiche</b>, pas le vôtre, et l'effet visuel confirme
+  seulement que l'enregistrement est passé. Si le contact vous revient
+  vraiment, changez le responsable dans la fiche, et les points suivent.</p>
+  <p><b>Échap</b> ou <b>Retour</b> ferme la fiche et vous laisse sur la liste,
+  pas à l'écran d'accueil.</p>
+  <p>Quatre usages qui justifient l'écran : savoir <b>si un contact est déjà
   travaillé et jusqu'où</b> avant d'aborder quelqu'un, <b>reprendre le fil</b>
-  d'un collègue parti déjeuner, et voir <b>ce qui reste en priorité A</b> chez
-  chacun quand une heure creuse se présente.</p>
+  d'un collègue parti déjeuner, <b>saisir à sa place</b> ce qui vient de se
+  passer devant le stand, et voir <b>ce qui reste en priorité A</b> chez chacun
+  quand une heure creuse se présente.</p>
 
   <h2>Les filtres acceptent plusieurs valeurs</h2>
   <p>Chaque filtre est une <b>liste à cocher</b>, pas un choix unique. On peut
@@ -231,9 +240,9 @@
 
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./js/config.js?v=20260831c"></script>
-<script src="./js/api.js?v=20260831c"></script>
-<script src="./js/nav.js?v=20260831c"></script>
-<script src="./js/methode.js?v=20260831c"></script>
+<script src="./js/config.js?v=20260831d"></script>
+<script src="./js/api.js?v=20260831d"></script>
+<script src="./js/nav.js?v=20260831d"></script>
+<script src="./js/methode.js?v=20260831d"></script>
 </body>
 </html>
